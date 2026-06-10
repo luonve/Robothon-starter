@@ -161,7 +161,7 @@ python3 -m pip install -r requirements.txt
 Run examples:
 
 ```bash
-python examples/run_x2_demo.py
+python examples/run_ff_master_demo.py
 python examples/run_zsl1_demo.py
 ```
 

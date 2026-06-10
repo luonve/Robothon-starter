@@ -20,14 +20,14 @@ VS Code extension: **URDF Visualizer**
 
 ## Variants
 
-### x2_ultra (plus)
+### ff_master_ultra (plus)
 
-![x2_ultra_plus](visual/x2_ultra.png)
+![ff_master_ultra_plus](visual/ff_master_ultra.png)
 
-### x2_hand (plus)
+### ff_master_hand (plus)
 
-![x2_hand_plus](visual/x2_hand.png)
+![ff_master_hand_plus](visual/ff_master_hand.png)
 
-### x2_fist (plus)
+### ff_master_fist (plus)
 
-![x2_fist_plus](visual/x2_fist.png)
+![ff_master_fist_plus](visual/ff_master_fist.png)

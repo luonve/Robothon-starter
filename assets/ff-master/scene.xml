@@ -1,5 +1,5 @@
-<mujoco model="x2 scene">
-  <include file="x2_ultra.xml"/>
+<mujoco model="ff_master scene">
+  <include file="ff_master_ultra.xml"/>
 
   <statistic center="0 0 0.6" extent="1.3"/>
 

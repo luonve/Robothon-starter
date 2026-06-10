@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<robot name="x2_t2.5">
+<robot name="ff_master_t2_5">
   <mujoco>
     <compiler meshdir="meshes" discardvisual="false" />
   </mujoco>

@@ -13,12 +13,12 @@ import launch_ros.substitutions
 
 def generate_launch_description():
 
-    turtlebot2_description_package = launch_ros.substitutions.FindPackageShare(package='x2_description').find('x2_description')
+    turtlebot2_description_package = launch_ros.substitutions.FindPackageShare(package='ff_master_description').find('ff_master_description')
     # ref:https://answers.ros.org/question/417369/caught-exception-in-launch-see-debug-for-traceback-unable-to-parse-the-value-of-parameter-robot_description-as-yaml/
     robot_state_publisher_node = launch_ros.actions.Node(
         package='robot_state_publisher',
         executable='robot_state_publisher',
-        parameters=[{'robot_description': launch_ros.descriptions.ParameterValue( launch.substitutions.Command(['cat ',os.path.join(turtlebot2_description_package,'urdf/x2t1.urdf'),]), value_type=str)  }]
+        parameters=[{'robot_description': launch_ros.descriptions.ParameterValue( launch.substitutions.Command(['cat ',os.path.join(turtlebot2_description_package,'urdf/ff_master.urdf'),]), value_type=str)  }]
     )
 
     joint_state_publisher_node = launch_ros.actions.Node(

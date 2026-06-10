@@ -1,11 +1,11 @@
-<mujoco model="x2t2.5">
+<mujoco model="ff_master_t2_5">
   <compiler angle='radian' eulerseq="XYZ" meshdir="./meshes"
     autolimits="true" />
 
   <option timestep="0.001" />
 
   <default>
-      <default class="x2">
+      <default class="ff_master">
           <site rgba="1 0 0 1" size="0.01" group="5"/>
           <joint damping="0.0" armature="0.03" frictionloss="0.3"/>
           <default class="visual">
@@ -64,7 +64,7 @@
   </asset>
 
   <worldbody>
-    <body name="pelvis" pos="0 0 0.68" euler="0 0 0" childclass="x2">
+    <body name="pelvis" pos="0 0 0.68" euler="0 0 0" childclass="ff_master">
       <light name="tracking" mode="trackcom" pos="0 0 2"/>
       <freejoint name="floating_base_joint"/>
       <geom class="visual" type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.298039 0.298039 0.298039 1" mesh="pelvis"/>
@@ -291,42 +291,42 @@
     </body>
   </worldbody>
   <actuator>
-    <motor class="x2" name="motor_left_hip_pitch_joint" joint="left_hip_pitch_joint" ctrlrange="-118 118"/>
-    <motor class="x2" name="motor_left_hip_roll_joint" joint="left_hip_roll_joint" ctrlrange="-118 118"/>
-    <motor class="x2" name="motor_left_hip_yaw_joint" joint="left_hip_yaw_joint" ctrlrange="-118 118"/>
-    <motor class="x2" name="motor_left_knee_joint" joint="left_knee_joint" ctrlrange="-118 118"/>
-    <motor class="x2" name="motor_left_ankle_pitch_joint" joint="left_ankle_pitch_joint" ctrlrange="-36 36"/>
-    <motor class="x2" name="motor_left_ankle_roll_joint" joint="left_ankle_roll_joint" ctrlrange="-24 24"/>
+    <motor class="ff_master" name="motor_left_hip_pitch_joint" joint="left_hip_pitch_joint" ctrlrange="-118 118"/>
+    <motor class="ff_master" name="motor_left_hip_roll_joint" joint="left_hip_roll_joint" ctrlrange="-118 118"/>
+    <motor class="ff_master" name="motor_left_hip_yaw_joint" joint="left_hip_yaw_joint" ctrlrange="-118 118"/>
+    <motor class="ff_master" name="motor_left_knee_joint" joint="left_knee_joint" ctrlrange="-118 118"/>
+    <motor class="ff_master" name="motor_left_ankle_pitch_joint" joint="left_ankle_pitch_joint" ctrlrange="-36 36"/>
+    <motor class="ff_master" name="motor_left_ankle_roll_joint" joint="left_ankle_roll_joint" ctrlrange="-24 24"/>
 
-    <motor class="x2" name="motor_right_hip_pitch_joint" joint="right_hip_pitch_joint" ctrlrange="-118 118"/>
-    <motor class="x2" name="motor_right_hip_roll_joint" joint="right_hip_roll_joint" ctrlrange="-118 118"/>
-    <motor class="x2" name="motor_right_hip_yaw_joint" joint="right_hip_yaw_joint" ctrlrange="-118 118"/>
-    <motor class="x2" name="motor_right_knee_joint" joint="right_knee_joint" ctrlrange="-118 118"/>
-    <motor class="x2" name="motor_right_ankle_pitch_joint" joint="right_ankle_pitch_joint" ctrlrange="-36 36"/>
-    <motor class="x2" name="motor_right_ankle_roll_joint" joint="right_ankle_roll_joint" ctrlrange="-24 24"/>
+    <motor class="ff_master" name="motor_right_hip_pitch_joint" joint="right_hip_pitch_joint" ctrlrange="-118 118"/>
+    <motor class="ff_master" name="motor_right_hip_roll_joint" joint="right_hip_roll_joint" ctrlrange="-118 118"/>
+    <motor class="ff_master" name="motor_right_hip_yaw_joint" joint="right_hip_yaw_joint" ctrlrange="-118 118"/>
+    <motor class="ff_master" name="motor_right_knee_joint" joint="right_knee_joint" ctrlrange="-118 118"/>
+    <motor class="ff_master" name="motor_right_ankle_pitch_joint" joint="right_ankle_pitch_joint" ctrlrange="-36 36"/>
+    <motor class="ff_master" name="motor_right_ankle_roll_joint" joint="right_ankle_roll_joint" ctrlrange="-24 24"/>
 
-    <motor class="x2" name="motor_waist_yaw_joint" joint="waist_yaw_joint" ctrlrange="-118 118"/>
-    <motor class="x2" name="motor_waist_pitch_joint" joint="waist_pitch_joint" ctrlrange="-48 48"/>
-    <motor class="x2" name="motor_waist_roll_joint" joint="waist_roll_joint" ctrlrange="-48 48"/>
+    <motor class="ff_master" name="motor_waist_yaw_joint" joint="waist_yaw_joint" ctrlrange="-118 118"/>
+    <motor class="ff_master" name="motor_waist_pitch_joint" joint="waist_pitch_joint" ctrlrange="-48 48"/>
+    <motor class="ff_master" name="motor_waist_roll_joint" joint="waist_roll_joint" ctrlrange="-48 48"/>
 
-    <motor class="x2" name="motor_head_yaw_joint" joint="head_yaw_joint" ctrlrange="-2.6 2.6"/>
-    <motor class="x2" name="motor_head_pitch_joint" joint="head_pitch_joint" ctrlrange="-0.6 0.6"/>
+    <motor class="ff_master" name="motor_head_yaw_joint" joint="head_yaw_joint" ctrlrange="-2.6 2.6"/>
+    <motor class="ff_master" name="motor_head_pitch_joint" joint="head_pitch_joint" ctrlrange="-0.6 0.6"/>
 
-    <motor class="x2" name="motor_left_shoulder_pitch_joint" joint="left_shoulder_pitch_joint" ctrlrange="-36 36"/>
-    <motor class="x2" name="motor_left_shoulder_roll_joint" joint="left_shoulder_roll_joint" ctrlrange="-36 36"/>
-    <motor class="x2" name="motor_left_shoulder_yaw_joint" joint="left_shoulder_yaw_joint" ctrlrange="-24 24"/>
-    <motor class="x2" name="motor_left_elbow_joint" joint="left_elbow_joint" ctrlrange="-24 24"/>
-    <motor class="x2" name="motor_left_wrist_yaw_joint" joint="left_wrist_yaw_joint" ctrlrange="-24 24"/>
-    <motor class="x2" name="motor_left_wrist_pitch_joint" joint="left_wrist_pitch_joint" ctrlrange="-2.2 2.2"/>
-    <motor class="x2" name="motor_left_wrist_roll_joint" joint="left_wrist_roll_joint" ctrlrange="-2.2 2.2"/>
+    <motor class="ff_master" name="motor_left_shoulder_pitch_joint" joint="left_shoulder_pitch_joint" ctrlrange="-36 36"/>
+    <motor class="ff_master" name="motor_left_shoulder_roll_joint" joint="left_shoulder_roll_joint" ctrlrange="-36 36"/>
+    <motor class="ff_master" name="motor_left_shoulder_yaw_joint" joint="left_shoulder_yaw_joint" ctrlrange="-24 24"/>
+    <motor class="ff_master" name="motor_left_elbow_joint" joint="left_elbow_joint" ctrlrange="-24 24"/>
+    <motor class="ff_master" name="motor_left_wrist_yaw_joint" joint="left_wrist_yaw_joint" ctrlrange="-24 24"/>
+    <motor class="ff_master" name="motor_left_wrist_pitch_joint" joint="left_wrist_pitch_joint" ctrlrange="-2.2 2.2"/>
+    <motor class="ff_master" name="motor_left_wrist_roll_joint" joint="left_wrist_roll_joint" ctrlrange="-2.2 2.2"/>
 
-    <motor class="x2" name="motor_right_shoulder_pitch_joint" joint="right_shoulder_pitch_joint" ctrlrange="-36 36"/>
-    <motor class="x2" name="motor_right_shoulder_roll_joint" joint="right_shoulder_roll_joint" ctrlrange="-36 36"/>
-    <motor class="x2" name="motor_right_shoulder_yaw_joint" joint="right_shoulder_yaw_joint" ctrlrange="-24 24"/>
-    <motor class="x2" name="motor_right_elbow_joint" joint="right_elbow_joint" ctrlrange="-24 24"/>
-    <motor class="x2" name="motor_right_wrist_yaw_joint" joint="right_wrist_yaw_joint" ctrlrange="-24 24"/>
-    <motor class="x2" name="motor_right_wrist_pitch_joint" joint="right_wrist_pitch_joint" ctrlrange="-2.2 2.2"/>
-    <motor class="x2" name="motor_right_wrist_roll_joint" joint="right_wrist_roll_joint" ctrlrange="-2.2 2.2"/>
+    <motor class="ff_master" name="motor_right_shoulder_pitch_joint" joint="right_shoulder_pitch_joint" ctrlrange="-36 36"/>
+    <motor class="ff_master" name="motor_right_shoulder_roll_joint" joint="right_shoulder_roll_joint" ctrlrange="-36 36"/>
+    <motor class="ff_master" name="motor_right_shoulder_yaw_joint" joint="right_shoulder_yaw_joint" ctrlrange="-24 24"/>
+    <motor class="ff_master" name="motor_right_elbow_joint" joint="right_elbow_joint" ctrlrange="-24 24"/>
+    <motor class="ff_master" name="motor_right_wrist_yaw_joint" joint="right_wrist_yaw_joint" ctrlrange="-24 24"/>
+    <motor class="ff_master" name="motor_right_wrist_pitch_joint" joint="right_wrist_pitch_joint" ctrlrange="-2.2 2.2"/>
+    <motor class="ff_master" name="motor_right_wrist_roll_joint" joint="right_wrist_roll_joint" ctrlrange="-2.2 2.2"/>
   </actuator>
   <sensor>
     <!-- <gyro name="imu0-gyro" site="imu_0" cutoff="7.85"/>
