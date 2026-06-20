@@ -17,8 +17,9 @@ RESULTS = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 W, H = 1280, 720
 TOP, BOT = 64, 82
 RENDER_H = H - TOP - BOT
-C = {"bg": (15, 23, 26), "bar": (20, 31, 35), "ink": (224, 242, 241), "dim": (120, 144, 148),
-     "teal": (45, 212, 191), "amber": (245, 158, 11), "ok": (74, 222, 128)}
+# Theme SANG (lab/blueprint) — tuong phan ro voi DexFab (theme toi)
+C = {"bg": (237, 240, 235), "bar": (248, 249, 245), "ink": (22, 34, 43), "dim": (92, 108, 116),
+     "teal": (13, 148, 136), "amber": (181, 96, 8), "ok": (21, 145, 86)}
 COLrgb = {"R": (220, 90, 70), "G": (90, 200, 120), "B": (90, 130, 230)}
 PHASE_LABEL = {"hover": "approach", "descend": "descend", "grasp": "grasp", "lift": "lift",
                "transport": "transport", "place": "place", "release": "release",
