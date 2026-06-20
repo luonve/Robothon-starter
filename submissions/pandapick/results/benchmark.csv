@@ -1,0 +1,4 @@
+seed,pick_ok,place_ok,place_err_m,n_records
+0,True,True,0.0098,3480
+1,True,True,0.0089,3480
+2,True,True,0.0258,3480

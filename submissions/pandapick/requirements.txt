@@ -1,0 +1,7 @@
+# PandaPick — phu thuoc (chay CPU, khong can GPU)
+mujoco>=3.9,<4
+numpy>=1.26
+imageio>=2.34
+imageio-ffmpeg>=0.5      # encode video demo (.mp4)
+pillow>=10.0             # overlay telemetry len video
+matplotlib>=3.8          # ve bieu do benchmark
