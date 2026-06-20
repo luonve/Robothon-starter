@@ -17,7 +17,7 @@ def _pick_place_one(c, meta, i, dest_xy, dest_z, precise=False):
     cx, cy, cz = cube
     dx, dy = dest_xy
     place_steps = 720 if precise else 440      # stack can settle sat IK -> chinh xac hon
-    rel_h = 0.004 if precise else 0.012         # tha thap -> it xe dich khi roi
+    rel_h = 0.004 if precise else 0.012         # release low so the cube barely shifts on drop
     c.move_to([cx, cy, cz + 0.12], GRIP_OPEN, 380, "hover")
     c.move_to([cx, cy, cz], GRIP_OPEN, 380, "descend")
     c.set_grip(GRIP_CLOSE, 460, "grasp")
@@ -43,14 +43,14 @@ def run_episode(seed, task="pick_place", n=3, log=False, renderer=None, cam=None
     if task == "stack":
         bx, by = STACK_PAD
         for k in range(n):
-            dest_z = (2 * k + 1) * HALF              # cube k len do cao tang dan
+            dest_z = (2 * k + 1) * HALF              # each cube goes to an increasing height
             ok = _pick_place_one(c, meta, k, (bx, by), dest_z, precise=True)
             picks += int(ok)
-        # danh gia thap: moi cube dung do cao + gan truc
+        # tower check: every cube lifted + near the stack axis
         heights = sorted(meta.cube_pos(c.d, i)[2] for i in range(n))
         xy_ok = all(np.linalg.norm(meta.cube_pos(c.d, i)[:2] - np.array([bx, by])) < HALF * 1.4 for i in range(n))
         tower_h = heights[-1]
-        stacked = sum(1 for h in heights if h > HALF * 1.2)   # so cube duoc nhac khoi san
+        stacked = sum(1 for h in heights if h > HALF * 1.2)   # count cubes lifted off the table
         placeds = stacked if xy_ok else 0
         res.update({"tower_height_m": round(float(tower_h), 4),
                     "cubes_stacked": int(placeds), "xy_aligned": bool(xy_ok)})

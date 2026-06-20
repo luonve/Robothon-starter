@@ -16,9 +16,9 @@ _PANDA_XML = os.path.normpath(os.path.join(_HERE, "..", "vendor", "mujoco_menage
 HOME = np.array([0.0, -0.785, 0.0, -2.356, 0.0, 1.571, 0.785])
 GRASP_SITE_OFFSET = 0.0584
 FEEDER_TOP_Z = 0.10
-HALF = 0.022                              # nua canh cube (co dinh -> stack on dinh)
+HALF = 0.022                              # cube half-extent (fixed)
 
-# 3 mau linh kien cho task sort (R/G/B) + bin tuong ung
+# 3 part colours for the sort job (R/G/B) + matching bins
 COLORS = {"R": (0.85, 0.30, 0.25, 1), "G": (0.30, 0.65, 0.40, 1), "B": (0.30, 0.45, 0.85, 1)}
 SORT_BINS = {"R": (0.40, -0.26), "G": (0.50, -0.30), "B": (0.60, -0.26)}
 STACK_PAD = (0.50, -0.10)
@@ -29,7 +29,7 @@ def _rng(seed):
 
 
 def sample_scene(seed: int, task: str = "pick_place", n: int = 3) -> dict:
-    """Sinh tham so scene ngau nhien theo seed + task."""
+    """Sample a randomized scene from the seed and job type."""
     r = _rng(seed)
     feeders = []
     xs = np.linspace(0.44, 0.60, n)
@@ -62,12 +62,12 @@ def build_spec(scene: dict) -> "mujoco.MjSpec":
         g.size = [HALF, HALF, HALF]; g.rgba = list(COLORS[f["color"]]); g.mass = scene["mass"]
         g.condim = 4; g.friction = [2.0, 0.05, 0.001]
 
-    # destination: sort bins hoac stack pad marker
+    # destination: colour bins (sort) or a single tote/pad
     if scene["task"] == "sort":
         for col, (bx, by) in SORT_BINS.items():
             _add_bin(wb, f"bin_{col}", bx, by, COLORS[col])
     else:
-        # 1 bin chung (pick_place) tai STACK_PAD vung; stack chi can pad marker
+        # single tote for pick_place at the pad location
         bx, by = STACK_PAD
         pad = wb.add_geom(); pad.name = "stack_pad"; pad.type = mujoco.mjtGeom.mjGEOM_BOX
         pad.size = [0.04, 0.04, 0.004]; pad.pos = [bx, by, 0.004]; pad.rgba = [0.4, 0.4, 0.45, 1]

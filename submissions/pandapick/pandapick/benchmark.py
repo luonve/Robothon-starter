@@ -56,7 +56,7 @@ def summarize(rows, ds, n_cubes):
         "sort_accuracy": round(sum(r["success"] for r in so) / tot_cubes(so), 3),
         "mean_place_err_mm": round(float(np.mean(errs)) * 1000, 1) if errs else None,
         "dataset_steps": len(ds["qpos"]),
-        "obs_dim": 14,    # qpos7 + ee3 + grip1 + cube3
+        "obs_dim": 14,    # qpos(7) + ee(3) + grip(1) + cube(3)
         "action_dim": 7,
     }
 

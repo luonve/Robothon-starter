@@ -25,14 +25,14 @@ def main():
 
     from pandapick.benchmark import run_all
     n = 3 if args.quick else args.episodes
-    print(f"[BAT_DAU] PandaPick — {n} episode pick-and-place")
+    print(f"[START] PandaPick — {n} episodes per job type")
     t0 = time.time()
     summary, rows = run_all(n_episodes=n)
-    print("\n========== TONG KET ==========")
+    print("\n========== SUMMARY ==========")
     for k, v in summary.items():
         print(f"  {k:26s}: {v}")
-    print(f"  thoi gian: {time.time()-t0:.1f}s")
-    print("  Ket qua: results/benchmark.json + demo_dataset.npz")
+    print(f"  elapsed: {time.time()-t0:.1f}s")
+    print("  output: results/benchmark.json + demo_dataset.npz")
 
 
 if __name__ == "__main__":
