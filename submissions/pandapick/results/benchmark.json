@@ -1,93 +1,144 @@
 {
   "summary": {
-    "n_episodes": 3,
+    "n_episodes": 12,
+    "tasks": [
+      "pick_place",
+      "sort"
+    ],
     "pick_success_rate": 1.0,
     "place_success_rate": 1.0,
-    "mean_place_err_mm": 14.8,
-    "max_place_err_mm": 25.8,
-    "dataset_steps": 10440,
-    "workspace_coverage_m2": 0.0114,
-    "obs_dim": 13,
+    "sort_accuracy": 1.0,
+    "mean_place_err_mm": 13.6,
+    "dataset_steps": 114480,
+    "obs_dim": 14,
     "action_dim": 7
   },
   "episodes": [
     {
       "seed": 0,
-      "scene": {
-        "cube_xy": [
-          0.5219138699714326,
-          -0.04445972014611631
-        ],
-        "cube_half": 0.018245841143617166,
-        "cube_mass": 0.020495829065855873,
-        "cube_rgba": [
-          0.778625655480177,
-          0.8432911252305192,
-          0.6443132542486669,
-          1.0
-        ]
-      },
-      "pick_ok": true,
-      "place_ok": true,
-      "place_err_m": 0.0098,
-      "cube_final": [
-        0.4577,
-        -0.2739,
-        0.0257
-      ],
-      "n_records": 3480
+      "task": "pick_place",
+      "n": 3,
+      "placed": 3,
+      "mean_place_err_m": 0.013,
+      "picked": 3,
+      "success": 3,
+      "n_records": 9540,
+      "episode": 0
+    },
+    {
+      "seed": 0,
+      "task": "sort",
+      "n": 3,
+      "sorted_correct": 3,
+      "picked": 3,
+      "success": 3,
+      "n_records": 9540,
+      "episode": 1
     },
     {
       "seed": 1,
-      "scene": {
-        "cube_xy": [
-          0.501891459952041,
-          0.14612983497126192
-        ],
-        "cube_half": 0.018864957676317802,
-        "cube_mass": 0.04845948341411732,
-        "cube_rgba": [
-          0.45269044380681556,
-          0.5251621918321742,
-          0.7880066859832872,
-          1.0
-        ]
-      },
-      "pick_ok": true,
-      "place_ok": true,
-      "place_err_m": 0.0089,
-      "cube_final": [
-        0.4552,
-        -0.2728,
-        0.0264
-      ],
-      "n_records": 3480
+      "task": "pick_place",
+      "n": 3,
+      "placed": 3,
+      "mean_place_err_m": 0.0122,
+      "picked": 3,
+      "success": 3,
+      "n_records": 9540,
+      "episode": 2
+    },
+    {
+      "seed": 1,
+      "task": "sort",
+      "n": 3,
+      "sorted_correct": 3,
+      "picked": 3,
+      "success": 3,
+      "n_records": 9540,
+      "episode": 3
     },
     {
       "seed": 2,
-      "scene": {
-        "cube_xy": [
-          0.4618579414798906,
-          -0.036422479844045466
-        ],
-        "cube_half": 0.02288535444356568,
-        "cube_mass": 0.02275747826405291,
-        "cube_rgba": [
-          0.6400653418776752,
-          0.7235643424276665,
-          0.37213569768829224,
-          1.0
-        ]
-      },
-      "pick_ok": true,
-      "place_ok": true,
-      "place_err_m": 0.0258,
-      "cube_final": [
-        0.4567,
-        -0.2551,
-        0.0304
-      ],
-      "n_records": 3480
+      "task": "pick_place",
+      "n": 3,
+      "placed": 3,
+      "mean_place_err_m": 0.0166,
+      "picked": 3,
+      "success": 3,
+      "n_records": 9540,
+      "episode": 4
+    },
+    {
+      "seed": 2,
+      "task": "sort",
+      "n": 3,
+      "sorted_correct": 3,
+      "picked": 3,
+      "success": 3,
+      "n_records": 9540,
+      "episode": 5
+    },
+    {
+      "seed": 3,
+      "task": "pick_place",
+      "n": 3,
+      "placed": 3,
+      "mean_place_err_m": 0.0133,
+      "picked": 3,
+      "success": 3,
+      "n_records": 9540,
+      "episode": 6
+    },
+    {
+      "seed": 3,
+      "task": "sort",
+      "n": 3,
+      "sorted_correct": 3,
+      "picked": 3,
+      "success": 3,
+      "n_records": 9540,
+      "episode": 7
+    },
+    {
+      "seed": 4,
+      "task": "pick_place",
+      "n": 3,
+      "placed": 3,
+      "mean_place_err_m": 0.0145,
+      "picked": 3,
+      "success": 3,
+      "n_records": 9540,
+      "episode": 8
+    },
+    {
+      "seed": 4,
+      "task": "sort",
+      "n": 3,
+      "sorted_correct": 3,
+      "picked": 3,
+      "success": 3,
+      "n_records": 9540,
+      "episode": 9
+    },
+    {
+      "seed": 5,
+      "task": "pick_place",
+      "n": 3,
+      "placed": 3,
+      "mean_place_err_m": 0.0118,
+      "picked": 3,
+      "success": 3,
+      "n_records": 9540,
+      "episode": 10
+    },
+    {
+      "seed": 5,
+      "task": "sort",
+      "n": 3,
+      "sorted_correct": 3,
+      "picked": 3,
+      "success": 3,
+      "n_records": 9540,
+      "episode": 11
     }
   ]
 }

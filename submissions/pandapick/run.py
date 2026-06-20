@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 """PandaPick — entry point.
 
-  python run.py                # chay benchmark + sinh dataset demo
-  python run.py --episodes 20  # so episode
-  python run.py --quick        # nhanh 3 episode
-  python run.py --demo         # render video demo
+  python run.py                # run benchmark + generate the demonstration dataset
+  python run.py --episodes 20  # number of seeds
+  python run.py --quick        # quick smoke run
+  python run.py --demo         # render the demo video
 """
 from __future__ import annotations
 import argparse

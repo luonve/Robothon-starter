@@ -1,7 +1,8 @@
-"""IK controller + pick-place primitives + ghi du lieu (obs, action).
+"""IK controller + motion primitives + (obs, action) logging.
 
-IK: damped least-squares 6-DOF (vi tri tam kep -> target, huong gripper xuong),
-giai theo dong hoc thuan (mj_forward) roi command arm (dynamics). Da validate hoi tu ~0.
+Inverse kinematics: 6-DOF damped least-squares (grasp-site position -> target, gripper held
+pointing down), solved in pure kinematics (mj_forward) then commanded to the arm under dynamics.
+Converges to sub-millimetre before the arm moves.
 """
 from __future__ import annotations
 import numpy as np
@@ -23,6 +24,7 @@ class IKController:
         self.d = mujoco.MjData(model)
         self.grip = GRIP_OPEN
         self.phase = "init"
+        self.active_cube = 0          # cube dang thao tac (de log)
         self.do_log = log
         self.records = []          # dataset (obs, action) tung buoc
         self.frames = []           # frame video (neu bat)
@@ -30,6 +32,7 @@ class IKController:
         self._cam = None
         self._frame_every = 6
         self._k = 0
+        self.compose = None           # callable(raw_img)->frame (overlay), set boi record_demo
         self.reset()
 
     def reset(self):
@@ -47,7 +50,8 @@ class IKController:
         dt = mujoco.MjData(m)
         for _ in range(max_iter):
             dt.qpos[:7] = q
-            dt.qpos[meta.cube_jadr:meta.cube_jadr + 3] = [2, 2, 2]   # day cube ra xa khi giai
+            for a in meta.cube_jadr:                                 # day MOI cube ra xa khi giai
+                dt.qpos[a:a + 3] = [2, 2, 2]
             mujoco.mj_forward(m, dt)
             perr = target_pos - dt.site_xpos[meta.grasp_site]
             Rh = dt.site_xmat[meta.grasp_site].reshape(3, 3)
@@ -73,7 +77,7 @@ class IKController:
             "qvel": d.qvel[:7].round(4).tolist(),
             "ee_pos": self.meta.ee_pos(d).round(5).tolist(),
             "grip": float(self.grip),
-            "cube_pos": self.meta.cube_pos(d).round(5).tolist(),
+            "cube_pos": self.meta.cube_pos(d, self.active_cube).round(5).tolist(),
             "action_qtarget": np.asarray(q_target).round(5).tolist(),
         })
 
@@ -81,7 +85,8 @@ class IKController:
         self._k += 1
         if self._renderer is not None and self._k % self._frame_every == 0:
             self._renderer.update_scene(self.d, self._cam)
-            self.frames.append(self._renderer.render().copy())
+            raw = self._renderer.render().copy()
+            self.frames.append(self.compose(raw) if self.compose else raw)
 
     def move_to(self, target_pos, grip, steps: int = 500, phase: str = None, ramp_frac: float = 0.6):
         """Di chuyen MUOT: noi suy joint target tu hien tai -> nghiem IK trong ramp_frac*steps

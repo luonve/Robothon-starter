@@ -1,61 +1,79 @@
-"""1 episode pick-and-place + thu thap du lieu demo.
+"""One episode per job type, plus demonstration logging.
 
-State machine: HOVER -> DESCEND -> GRASP -> LIFT -> TRANSPORT -> PLACE -> RELEASE -> RETRACT.
-Tra ket qua (pick/place success, do chinh xac, cycle time) + ban ghi (obs, action).
+- pick_place: lift each cube and drop it in the tote.
+- sort:       lift each cube and route it to the matching colour bin (R/G/B).
+Per-cube state machine: hover -> descend -> grasp -> lift -> transport -> place -> release -> retract.
 """
 from __future__ import annotations
 import numpy as np
 
-from .model import build_model, FEEDER_TOP_Z
+from .model import build_model, HALF, FEEDER_TOP_Z, SORT_BINS, STACK_PAD
 from .control import IKController, GRIP_OPEN, GRIP_CLOSE
 
 
-def run_episode(seed: int, log: bool = False, renderer=None, cam=None, fast: bool = False):
-    model, meta = build_model(seed)
+def _pick_place_one(c, meta, i, dest_xy, dest_z, precise=False):
+    c.active_cube = i
+    cube = meta.cube_pos(c.d, i)
+    cx, cy, cz = cube
+    dx, dy = dest_xy
+    place_steps = 720 if precise else 440      # stack can settle sat IK -> chinh xac hon
+    rel_h = 0.004 if precise else 0.012         # tha thap -> it xe dich khi roi
+    c.move_to([cx, cy, cz + 0.12], GRIP_OPEN, 380, "hover")
+    c.move_to([cx, cy, cz], GRIP_OPEN, 380, "descend")
+    c.set_grip(GRIP_CLOSE, 460, "grasp")
+    c.move_to([cx, cy, cz + 0.24], GRIP_CLOSE, 420, "lift")
+    picked = meta.cube_pos(c.d, i)[2] > cz + 0.12
+    c.move_to([dx, dy, dest_z + 0.14], GRIP_CLOSE, 520, "transport")
+    c.move_to([dx, dy, dest_z + rel_h], GRIP_CLOSE, place_steps, "place")
+    c.set_grip(GRIP_OPEN, 280, "release")
+    c.move_to([dx, dy, dest_z + 0.16], GRIP_OPEN, 260, "retract")
+    return picked
+
+
+def run_episode(seed, task="pick_place", n=3, log=False, renderer=None, cam=None):
+    model, meta = build_model(seed, task, n)
     c = IKController(model, meta, log=log)
     if renderer is not None:
         c._renderer = renderer; c._cam = cam
-    s = 1 if fast else 1
-    # de cube settle tren feeder
-    c.set_grip(GRIP_OPEN, steps=120, phase="settle")
+    c.set_grip(GRIP_OPEN, 120, "settle")
 
-    cube0 = meta.cube_pos(c.d)
-    cx, cy, cz = cube0
-    half = meta.scene["cube_half"]
-    grasp_z = cz                                  # tam cube
-    bin_xy = meta.bin_pos[:2]
+    res = {"seed": seed, "task": task, "n": n}
+    picks, placeds, errs = 0, 0, []
 
-    res = {"seed": seed, "scene": {k: (list(v) if isinstance(v, (tuple, list, np.ndarray)) else v)
-                                   for k, v in meta.scene.items()}}
+    if task == "stack":
+        bx, by = STACK_PAD
+        for k in range(n):
+            dest_z = (2 * k + 1) * HALF              # cube k len do cao tang dan
+            ok = _pick_place_one(c, meta, k, (bx, by), dest_z, precise=True)
+            picks += int(ok)
+        # danh gia thap: moi cube dung do cao + gan truc
+        heights = sorted(meta.cube_pos(c.d, i)[2] for i in range(n))
+        xy_ok = all(np.linalg.norm(meta.cube_pos(c.d, i)[:2] - np.array([bx, by])) < HALF * 1.4 for i in range(n))
+        tower_h = heights[-1]
+        stacked = sum(1 for h in heights if h > HALF * 1.2)   # so cube duoc nhac khoi san
+        placeds = stacked if xy_ok else 0
+        res.update({"tower_height_m": round(float(tower_h), 4),
+                    "cubes_stacked": int(placeds), "xy_aligned": bool(xy_ok)})
+    elif task == "sort":
+        for i in range(n):
+            col = meta.colors[i]
+            bx, by = SORT_BINS[col]
+            ok = _pick_place_one(c, meta, i, (bx, by), HALF + 0.02)
+            picks += int(ok)
+            cf = meta.cube_pos(c.d, i)
+            in_bin = np.linalg.norm(cf[:2] - np.array([bx, by])) < 0.05 and cf[2] < 0.12
+            placeds += int(ok and in_bin)
+        res.update({"sorted_correct": int(placeds)})
+    else:   # pick_place
+        bx, by = STACK_PAD
+        for i in range(n):
+            ok = _pick_place_one(c, meta, i, (bx, by), HALF + 0.02)
+            picks += int(ok)
+            cf = meta.cube_pos(c.d, i)
+            in_bin = np.linalg.norm(cf[:2] - np.array([bx, by])) < 0.06 and cf[2] < 0.14
+            placeds += int(ok and in_bin)
+            errs.append(float(np.linalg.norm(cf[:2] - np.array([bx, by]))))
+        res.update({"placed": int(placeds), "mean_place_err_m": round(float(np.mean(errs)), 4) if errs else None})
 
-    # 1. HOVER tren cube
-    c.move_to([cx, cy, cz + 0.12], GRIP_OPEN, steps=420, phase="hover")
-    # 2. DESCEND toi tam cube
-    c.move_to([cx, cy, grasp_z], GRIP_OPEN, steps=420, phase="descend")
-    z_before = meta.cube_pos(c.d)[2]
-    # 3. GRASP (dong kep)
-    c.set_grip(GRIP_CLOSE, steps=500, phase="grasp")
-    # 4. LIFT
-    c.move_to([cx, cy, cz + 0.22], GRIP_CLOSE, steps=450, phase="lift")
-    z_lift = meta.cube_pos(c.d)[2]
-    pick_ok = bool(z_lift > cz + 0.12)
-    # 5. TRANSPORT toi tren bin
-    c.move_to([bin_xy[0], bin_xy[1], cz + 0.24], GRIP_CLOSE, steps=550, phase="transport")
-    # 6. PLACE (ha xuong sat day bin -> tha gan, khong nay ra)
-    c.move_to([bin_xy[0], bin_xy[1], 0.055 + half], GRIP_CLOSE, steps=420, phase="place")
-    # 7. RELEASE
-    c.set_grip(GRIP_OPEN, steps=300, phase="release")
-    # 8. RETRACT
-    c.move_to([bin_xy[0], bin_xy[1], cz + 0.24], GRIP_OPEN, steps=300, phase="retract")
-
-    cube_f = meta.cube_pos(c.d)
-    place_err = float(np.linalg.norm(cube_f[:2] - bin_xy))
-    place_ok = bool(pick_ok and place_err < 0.06 and cube_f[2] < 0.10)
-    res.update({
-        "pick_ok": pick_ok,
-        "place_ok": place_ok,
-        "place_err_m": round(place_err, 4),
-        "cube_final": cube_f.round(4).tolist(),
-        "n_records": len(c.records),
-    })
+    res.update({"picked": picks, "success": placeds, "n_records": len(c.records)})
     return res, c.records, c
