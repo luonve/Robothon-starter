@@ -13,7 +13,7 @@ import time
 
 def main():
     ap = argparse.ArgumentParser(description="PandaPick pick-and-place data-collection")
-    ap.add_argument("--episodes", type=int, default=12)
+    ap.add_argument("--tasks", type=int, default=None, help="limit to first N tasks (default: full 15)")
     ap.add_argument("--quick", action="store_true")
     ap.add_argument("--demo", action="store_true")
     args = ap.parse_args()
@@ -24,8 +24,8 @@ def main():
         return
 
     from pandapick.benchmark import run_all
-    n = 3 if args.quick else args.episodes
-    print(f"[START] PandaPick — {n} episodes per job type")
+    n = 3 if args.quick else args.tasks
+    print(f"[START] PandaPick — {'15' if n is None else n}-task benchmark")
     t0 = time.time()
     summary, rows = run_all(n_episodes=n)
     print("\n========== SUMMARY ==========")

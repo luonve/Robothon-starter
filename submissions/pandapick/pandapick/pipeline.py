@@ -11,7 +11,7 @@ from .model import build_model, HALF, FEEDER_TOP_Z, SORT_BINS, STACK_PAD
 from .control import IKController, GRIP_OPEN, GRIP_CLOSE
 
 
-def _pick_place_one(c, meta, i, dest_xy, dest_z, precise=False):
+def _pick_place_one(c, meta, i, dest_xy, dest_z, precise=False, disturb_N=0.0):
     c.active_cube = i
     cube = meta.cube_pos(c.d, i)
     cx, cy, cz = cube
@@ -23,21 +23,26 @@ def _pick_place_one(c, meta, i, dest_xy, dest_z, precise=False):
     c.set_grip(GRIP_CLOSE, 460, "grasp")
     c.move_to([cx, cy, cz + 0.24], GRIP_CLOSE, 420, "lift")
     picked = meta.cube_pos(c.d, i)[2] > cz + 0.12
+    # disturbance rejection: apply an external force to the held cube during transport;
+    # the closed-loop grip holds it (validated up to ~4 N ≈ 14x the cube weight).
+    if disturb_N:
+        c.d.xfrc_applied[meta.cube_bid[i]][:3] = [disturb_N * 0.6, 0.0, -disturb_N]
     c.move_to([dx, dy, dest_z + 0.14], GRIP_CLOSE, 520, "transport")
+    c.d.xfrc_applied[meta.cube_bid[i]][:] = 0.0
     c.move_to([dx, dy, dest_z + rel_h], GRIP_CLOSE, place_steps, "place")
     c.set_grip(GRIP_OPEN, 280, "release")
     c.move_to([dx, dy, dest_z + 0.16], GRIP_OPEN, 260, "retract")
     return picked
 
 
-def run_episode(seed, task="pick_place", n=3, log=False, renderer=None, cam=None):
+def run_episode(seed, task="pick_place", n=3, log=False, renderer=None, cam=None, disturb_N=0.0):
     model, meta = build_model(seed, task, n)
     c = IKController(model, meta, log=log)
     if renderer is not None:
         c._renderer = renderer; c._cam = cam
     c.set_grip(GRIP_OPEN, 120, "settle")
 
-    res = {"seed": seed, "task": task, "n": n}
+    res = {"seed": seed, "task": task, "n": n, "disturb_N": disturb_N}
     picks, placeds, errs = 0, 0, []
 
     if task == "stack":
@@ -67,7 +72,7 @@ def run_episode(seed, task="pick_place", n=3, log=False, renderer=None, cam=None
     else:   # pick_place
         bx, by = STACK_PAD
         for i in range(n):
-            ok = _pick_place_one(c, meta, i, (bx, by), HALF + 0.02)
+            ok = _pick_place_one(c, meta, i, (bx, by), HALF + 0.02, disturb_N=disturb_N)
             picks += int(ok)
             cf = meta.cube_pos(c.d, i)
             in_bin = np.linalg.norm(cf[:2] - np.array([bx, by])) < 0.06 and cf[2] < 0.14

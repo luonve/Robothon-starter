@@ -1,13 +1,16 @@
-episode,seed,task,picked,success
-0,0,pick_place,3,3
-1,0,sort,3,3
-2,1,pick_place,3,3
-3,1,sort,3,3
-4,2,pick_place,3,3
-5,2,sort,3,3
-6,3,pick_place,3,3
-7,3,sort,3,3
-8,4,pick_place,3,3
-9,4,sort,3,3
-10,5,pick_place,3,3
-11,5,sort,3,3
+episode,task_id,task,n,picked,success,mean_place_err_m
+0,T01 place-A,pick_place,3,3,3,0.013
+1,T02 place-B,pick_place,3,3,3,0.0122
+2,T03 place-C,pick_place,2,2,2,0.0115
+3,T04 place-4obj,pick_place,4,4,4,0.0135
+4,T05 place-E,pick_place,3,3,3,0.0145
+5,T06 sort-RGB-A,sort,3,3,3,
+6,T07 sort-RGB-B,sort,3,3,3,
+7,T08 sort-RGB-C,sort,3,3,3,
+8,T09 sort-RGB-D,sort,3,3,3,
+9,T10 sort-RGB-E,sort,3,3,3,
+10,T11 place-2obj,pick_place,2,2,2,0.0106
+11,T12 place-4obj-B,pick_place,4,4,4,0.0191
+12,T13 sort-2obj,sort,2,2,2,
+13,T14 place-F,pick_place,3,3,3,0.0119
+14,T15 sort-F,sort,3,3,3,
