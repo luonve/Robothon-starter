@@ -6,6 +6,12 @@ demonstration dataset for imitation learning.**
 
 Runs on MuJoCo, CPU-only, in one command.
 
+![PandaPick demo — pick-and-place and colour sorting](results/pandapick_demo.gif)
+
+_Above: the live demo (also as full video `results/pandapick_demo.mp4`, produced by
+`python run.py --demo`). The arm autonomously picks each cube and either totes or colour-sorts
+it, while logging every state-action step._
+
 ---
 
 ## Why this exists
