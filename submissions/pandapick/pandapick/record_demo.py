@@ -23,7 +23,7 @@ C = {"bg": (237, 240, 235), "bar": (248, 249, 245), "ink": (22, 34, 43), "dim": 
 COLrgb = {"R": (220, 90, 70), "G": (90, 200, 120), "B": (90, 130, 230)}
 PHASE_LABEL = {"hover": "approach", "descend": "descend", "grasp": "grasp", "lift": "lift",
                "transport": "transport", "place": "place", "release": "release",
-               "retract": "retract", "settle": "init"}
+               "retract": "retract", "settle": "init", "hold": "secure"}
 
 
 def _font(sz):
@@ -66,6 +66,10 @@ def _hud(raw, st):
         d.text((600, by + 12), "target bin", font=_font(13), fill=C["dim"])
         d.rectangle([600, by + 34, 628, by + 60], fill=COLrgb[st["color"]])
         d.text((636, by + 34), st["color"], font=_font(22), fill=C["ink"])
+    # disturbance indicator (grasp-stability demo)
+    if st.get("disturb", 0):
+        d.text((600, by + 12), "disturbance", font=_font(13), fill=C["dim"])
+        d.text((600, by + 30), f"{st['disturb']:.0f} N  ->  GRIP HOLDS", font=_font(22), fill=C["amber"])
     d.text((W - 430, by + 14), f"demo steps  {st['steps']:,}", font=_font(16), fill=C["dim"])
     d.text((W - 430, by + 40), "obs/action -> imitation dataset", font=_font(15), fill=C["dim"])
     return np.asarray(cv)
@@ -120,6 +124,45 @@ def _render_episode(seed, task, ep, total, tally, frames, n=3):
     return ok
 
 
+def _render_disturb_episode(seed, ep, total, tally, frames):
+    """Grasp-stability demo: hold a cube while an external disturbance is applied."""
+    model, meta = build_model(seed, "pick_place", 1)
+    rnd = mujoco.Renderer(model, RENDER_H, W); cam = _cam()
+    c = IKController(model, meta, log=False)
+    c._renderer = rnd; c._cam = cam; c._frame_every = 12
+    st = {"task": "pick_place", "ep": ep, "total": total, "phase": "settle", "grip": GRIP_OPEN,
+          "cube": 0, "color": None, "disturb": 0, "ok": tally["ok"], "done": tally["done"], "steps": tally["steps"]}
+
+    def compose(raw):
+        st["phase"] = c.phase; st["grip"] = c.grip; st["cube"] = 0
+        tally["steps"] += c._frame_every; st["steps"] = tally["steps"]
+        return _hud(raw, st)
+    c.compose = compose
+
+    c.set_grip(GRIP_OPEN, 120, "settle")
+    cx, cy, cz = meta.cube_pos(c.d, 0)
+    c.move_to([cx, cy, cz + 0.12], GRIP_OPEN, 300, "hover")
+    c.move_to([cx, cy, cz], GRIP_OPEN, 300, "descend")
+    c.set_grip(GRIP_CLOSE, 400, "grasp")
+    c.move_to([cx, cy, cz + 0.24], GRIP_CLOSE, 360, "lift")
+    cb = meta.cube_bid[0]
+    for F in (3.0, 5.0):                       # ramp the disturbance up
+        st["disturb"] = F
+        c.d.xfrc_applied[cb][:3] = [F * 0.6, 0.0, -F]
+        c.set_grip(GRIP_CLOSE, 170, "hold")    # step + capture while holding against the force
+    c.d.xfrc_applied[cb][:] = 0.0; st["disturb"] = 0
+    held = meta.cube_pos(c.d, 0)[2] > cz + 0.12
+    bx, by = STACK_PAD
+    c.move_to([bx, by, cz + 0.24], GRIP_CLOSE, 420, "transport")
+    c.move_to([bx, by, HALF + 0.03], GRIP_CLOSE, 360, "place")
+    c.set_grip(GRIP_OPEN, 250, "release")
+    c.move_to([bx, by, cz + 0.2], GRIP_OPEN, 200, "retract")
+    tally["done"] += 1; tally["ok"] += int(held)
+    frames.extend(c.frames)
+    del rnd
+    return held
+
+
 def record(out_path=None, fps=24):
     out_path = out_path or os.path.join(RESULTS, "pandapick_demo.mp4")
     os.makedirs(RESULTS, exist_ok=True)
@@ -129,16 +172,20 @@ def record(out_path=None, fps=24):
                     80, subs=["Franka Emika Panda  //  MuJoCo  //  resolved-rate IK",
                               "autonomous demos -> labelled (obs, action) dataset"])
     tally = {"ok": 0, "done": 0, "steps": 0}
-    plan = [(0, "pick_place"), (1, "sort")]
-    for idx, (seed, task) in enumerate(plan):
-        frames += _card([(f"Episode {idx+1}", 38, C["ink"]),
-                         ("colour sort" if task == "sort" else "pick & place", 24, C["amber"])],
-                        22, subs=["randomized positions / colours"])
-        _render_episode(seed, task, idx, len(plan), tally, frames)
+    total = 3
+    frames += _card([("Episode 1", 38, C["ink"]), ("pick & place", 24, C["amber"])],
+                    22, subs=["randomized cube positions"])
+    _render_episode(0, "pick_place", 0, total, tally, frames)
+    frames += _card([("Episode 2", 38, C["ink"]), ("colour sort  (R / G / B)", 24, C["amber"])],
+                    22, subs=["read each colour, route to its bin"])
+    _render_episode(1, "sort", 1, total, tally, frames)
+    frames += _card([("Episode 3", 38, C["ink"]), ("grasp stability", 24, C["amber"])],
+                    22, subs=["hold the object against an external disturbance"])
+    _render_disturb_episode(0, 2, total, tally, frames)
     frames += _card([("PandaPick", 54, C["ink"]),
-                     ("place 100%  //  sort 100%  //  ~114k demo steps", 22, C["teal"])],
-                    80, subs=["pip install -r requirements.txt  &&  python run.py",
-                              "pure CPU  //  no GPU  //  one command"])
+                     ("15 tasks // 100% success // 13.3 mm // holds ~20x object weight", 21, C["teal"])],
+                    85, subs=["resolved-rate IK  //  140k-step imitation dataset",
+                              "pip install -r requirements.txt  &&  python run.py  //  CPU, no GPU"])
     imageio.mimwrite(out_path, frames, fps=fps, quality=8, macro_block_size=1)
     print(f"[OK] {len(frames)} frame ({len(frames)/fps:.0f}s) -> {out_path}")
     return out_path
