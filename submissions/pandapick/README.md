@@ -8,9 +8,10 @@ Runs on MuJoCo, CPU-only, in one command.
 
 ![PandaPick demo — pick-and-place and colour sorting](results/pandapick_demo.gif)
 
-_Above: the live demo (also as full video `results/pandapick_demo.mp4`, produced by
-`python run.py --demo`). The arm autonomously picks each cube and either totes or colour-sorts
-it, while logging every state-action step._
+_Above: the live demo (full video `results/pandapick_demo.mp4` + `results/pandapick_narration.srt`,
+produced by `python run.py --demo`, ~40 s with a cinematic dollying/orbiting camera). Three acts —
+**pick & place → colour sort → grasp stability** (the grip holds the cube against an external shove) —
+each autonomous, with every state-action step logged to the imitation dataset._
 
 ---
 
