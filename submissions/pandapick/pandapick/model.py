@@ -45,6 +45,16 @@ def build_spec(scene: dict) -> "mujoco.MjSpec":
     spec = mujoco.MjSpec.from_file(_PANDA_XML)
     spec.visual.global_.offwidth = 1920
     spec.visual.global_.offheight = 1080
+    # CLEAN SCENE (judge Gemini: 'reduce elements in the scene') — san CARO -> TRON matte,
+    # bot haze -> nen sach, de doc chuyen dong (giong scene toi gon cua DexFab).
+    try:
+        fl = spec.geom("floor"); fl.material = ""; fl.rgba = [0.44, 0.46, 0.50, 1]
+    except Exception:
+        pass
+    try:
+        spec.visual.rgba.haze = [0.10, 0.12, 0.16, 1.0]
+    except Exception:
+        pass
 
     hsite = spec.body("hand").add_site()
     hsite.name = "grasp"; hsite.pos = [0, 0, GRASP_SITE_OFFSET]

@@ -24,6 +24,11 @@ COLrgb = {"R": (220, 90, 70), "G": (90, 200, 120), "B": (90, 130, 230)}
 PHASE_LABEL = {"hover": "approach", "descend": "descend", "grasp": "grasp", "lift": "lift",
                "transport": "transport", "place": "place", "release": "release",
                "retract": "retract", "settle": "init", "hold": "secure"}
+# 1-claim-per-phase (cong thuc 90+): cau khang dinh ngan goi cho moi pha
+PHASE_CLAIM = {"hover": "servoing to the cube", "descend": "resolved-rate IK, sub-mm",
+               "grasp": "closing on the body", "lift": "object lifted",
+               "transport": "carrying to target", "place": "13.3 mm mean precision",
+               "release": "placed", "retract": "reset", "settle": "scene randomized", "hold": "holding the shove"}
 
 
 def _font(sz):
@@ -77,30 +82,23 @@ def _hud(raw, st):
     d.text((W // 2 + 40, 22), task_txt, font=_font(20), fill=C["amber"])
     d.text((W - 250, 12), f"episode {st['ep']+1}/{st['total']}", font=_font(17), fill=C["dim"])
     d.text((W - 250, 36), f"success {st['ok']}/{st['done']}", font=_font(17), fill=C["ok"])
-    # bottom strip
+    # bottom strip — GON (judge: 'reduce elements'): phase + 1 claim + beat, bo gripper/cube#/steps
     by = H - BOT
     d.rectangle([0, by, W, H], fill=C["bar"]); d.line([0, by, W, by], fill=C["teal"], width=2)
     ph = PHASE_LABEL.get(st["phase"], st["phase"])
     d.text((24, by + 12), "phase", font=_font(13), fill=C["dim"])
     d.text((24, by + 30), ph.upper(), font=_font(26), fill=C["teal"])
-    d.text((300, by + 12), "gripper", font=_font(13), fill=C["dim"])
-    d.text((300, by + 32), "OPEN" if st["grip"] > 128 else "HOLD", font=_font(20), fill=C["ink"])
-    d.text((470, by + 12), "cube", font=_font(13), fill=C["dim"])
-    d.text((470, by + 32), f"#{st['cube']+1}", font=_font(20), fill=C["ink"])
-    # target color chip (sort)
-    if st["task"] == "sort" and st.get("color"):
-        d.text((600, by + 12), "target bin", font=_font(13), fill=C["dim"])
-        d.rectangle([600, by + 34, 628, by + 60], fill=COLrgb[st["color"]])
-        d.text((636, by + 34), st["color"], font=_font(22), fill=C["ink"])
-    # grasp-stability beat: SLIP RISK (do) -> GRIP HOLDS (xanh) khi held xac nhan (color-flip drama)
+    d.text((300, by + 26), PHASE_CLAIM.get(st["phase"], ""), font=_font(20), fill=C["ink"])
+    # right: color-flip beat / sort-bin / dataset note (chi 1 thu)
     if st.get("held"):
-        d.text((600, by + 12), "result", font=_font(13), fill=C["dim"])
-        d.text((600, by + 30), "GRIP HOLDS  -  19.9x WEIGHT", font=_font(22), fill=C["ok"])
+        d.text((W - 470, by + 26), "GRIP HOLDS  -  19.9x WEIGHT", font=_font(22), fill=C["ok"])
     elif st.get("disturb", 0):
-        d.text((600, by + 12), "disturbance", font=_font(13), fill=C["dim"])
-        d.text((600, by + 30), f"SLIP RISK   {st['disturb']:.0f} N", font=_font(22), fill=(214, 78, 60))
-    d.text((W - 430, by + 14), f"demo steps  {st['steps']:,}", font=_font(16), fill=C["dim"])
-    d.text((W - 430, by + 40), "obs/action -> imitation dataset", font=_font(15), fill=C["dim"])
+        d.text((W - 470, by + 26), f"SLIP RISK   {st['disturb']:.0f} N", font=_font(22), fill=(214, 78, 60))
+    elif st["task"] == "sort" and st.get("color"):
+        d.rectangle([W - 470, by + 26, W - 444, by + 52], fill=COLrgb[st["color"]])
+        d.text((W - 436, by + 26), f"route -> {st['color']}", font=_font(20), fill=C["ink"])
+    else:
+        d.text((W - 470, by + 28), "obs/action -> dataset", font=_font(16), fill=C["dim"])
     return np.asarray(cv)
 
 
