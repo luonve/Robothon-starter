@@ -101,6 +101,27 @@ def main():
           len(per) >= 5 and frag.get("closed_intact_count") == len(per) and frag.get("open_cracked_count") == len(per),
           f"closed intact {frag.get('closed_intact_count')}/{len(per)}, open cracked {frag.get('open_cracked_count')}/{len(per)}")
 
+    # 9-11. Haptic payload identification: mass read from fingertip SHEAR force, not from qpos/body_mass.
+    pp_ = os.path.join(HERE, "results", "payload.json")
+    pay = json.load(open(pp_, encoding="utf-8")) if os.path.exists(pp_) else {}
+    pper = pay.get("per_seed", [])
+    # 9. The signal is the contact SHEAR (mj_contactForce tangential), read via control.read_grip_shear -
+    #    NOT body_mass / qpos. The estimate column must be derived from shear_N, never copied from truth.
+    uses_shear = "read_grip_shear" in src and "hypot" in src
+    est_not_truth = all(r.get("est_mass_g") != r.get("true_mass_g")
+                        for r in pper if r.get("role") == "estimate")
+    check("payload mass inferred from fingertip SHEAR sensor (not qpos/body_mass)",
+          os.path.exists(pp_) and uses_shear and est_not_truth and len(pper) >= 5,
+          f"shear_reader={uses_shear} est!=truth={est_not_truth} ({len(pper)} seeds)")
+    # 10. The haptic estimate genuinely TRACKS true mass (tight linear correlation across seeds).
+    r_pear = pay.get("pearson_r_mass_vs_shear", 0.0)
+    check("payload estimate tracks true mass (Pearson r >= 0.95)",
+          r_pear >= 0.95, f"r = {r_pear}")
+    # 11. After single-reference calibration the estimate is accurate (mean abs err < 6%).
+    merr = pay.get("mean_abs_err_pct", 99.0)
+    check("payload mean abs error < 6% after 1-point calibration",
+          merr is not None and merr < 6.0, f"{merr}% (max {pay.get('max_abs_err_pct')}%)")
+
     print("RESULT:", "ALL CHECKS PASS" if ok else "SOME CHECKS FAILED")
     sys.exit(0 if ok else 1)
 

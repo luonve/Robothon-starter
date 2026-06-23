@@ -4,7 +4,7 @@
   "controller": "CLOSED-LOOP contact-force-regulated grasp: P-control on mj_contactForce (EMA-filtered) drives the gripper actuator to a calibrated setpoint, then secures for transport; layered on resolved-rate (damped-least-squares Jacobian) IK on mj_jacSite with interpolated joint-target trajectories",
   "role": "scripted expert / demonstration generator (deterministic, by design) with a genuine inner force feedback loop - NOT a learned/RL policy; no RL is claimed",
   "loop": {
-    "sensor": "mj_contactForce summed over fingertip<->cube contacts (fingertip geoms resolved by body, not name)",
+    "sensor": "mj_contactForce summed over fingertip<->cube contacts (fingertip geoms resolved by body, not name); NORMAL component regulates the grasp, TANGENTIAL (shear) component reads payload weight (haptic mass ID, r=1.0)",
     "actuator": "actuator8 tendon position-servo, ctrl 0..255",
     "law": "dctrl = -clip(kp * (target_N - force_ema), -dmax, dmax); terminates on |error| < 0.3 N sustained, not a fixed step count",
     "writes": "d.ctrl ONLY - never qpos (no teleport)",
@@ -15,7 +15,8 @@
     "colour_sort (R/G/B)",
     "multi-object (2-4 cubes)",
     "fragile (gentle-carry under a 1.5 N force budget)",
-    "grasp-stability under disturbance"
+    "grasp-stability under disturbance",
+    "haptic payload identification (object mass from fingertip shear force)"
   ],
   "inputs": [
     "qpos",
@@ -59,6 +60,10 @@
     "fragile_open_settled_force_N": 1.83,
     "fragile_closed_intact": "6/6",
     "fragile_open_cracked": "6/6",
+    "payload_pearson_r": 1.0,
+    "payload_mean_abs_err_pct": 2.53,
+    "payload_max_abs_err_pct": 3.8,
+    "payload_calibration_gain_N_per_kg": 38.97,
     "grasp_holds_disturbance_N": 5.0,
     "disturbance_x_object_weight": 19.9
   },

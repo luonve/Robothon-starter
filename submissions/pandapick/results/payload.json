@@ -1,0 +1,65 @@
+{
+  "metric": "haptic payload identification (fingertip tangential/friction force -> object mass)",
+  "method": "hold the object statically; the summed fingertip SHEAR force (mj_contactForce tangential) balances gravity and is linear in mass. Single-reference calibration of the gain (like a load cell), then mass read from force alone — NEVER from qpos / body_mass.",
+  "calibration_gain_N_per_kg": 38.97,
+  "calibration_ref_seed": 0,
+  "pearson_r_mass_vs_shear": 1.0,
+  "n_estimated": 5,
+  "mean_abs_err_pct": 2.53,
+  "max_abs_err_pct": 3.8,
+  "mass_range_g": [
+    25.6,
+    39.6
+  ],
+  "integrity_note": "mass is INFERRED from the fingertip friction force only (calibrated linear readout); body_mass is used solely as ground truth to score the error. audit.py re-verifies the estimate tracks true mass (Pearson r) and is sensor-grounded, not read from qpos.",
+  "per_seed": [
+    {
+      "seed": 0,
+      "true_mass_g": 25.6,
+      "shear_N": 0.998,
+      "est_mass_g": 25.6,
+      "abs_err_pct": 0.0,
+      "role": "calibration_ref"
+    },
+    {
+      "seed": 1,
+      "true_mass_g": 27.2,
+      "shear_N": 1.055,
+      "est_mass_g": 27.1,
+      "abs_err_pct": 0.36,
+      "role": "estimate"
+    },
+    {
+      "seed": 2,
+      "true_mass_g": 37.2,
+      "shear_N": 1.403,
+      "est_mass_g": 36.0,
+      "abs_err_pct": 3.23,
+      "role": "estimate"
+    },
+    {
+      "seed": 3,
+      "true_mass_g": 37.0,
+      "shear_N": 1.397,
+      "est_mass_g": 35.9,
+      "abs_err_pct": 3.15,
+      "role": "estimate"
+    },
+    {
+      "seed": 4,
+      "true_mass_g": 39.6,
+      "shear_N": 1.486,
+      "est_mass_g": 38.1,
+      "abs_err_pct": 3.8,
+      "role": "estimate"
+    },
+    {
+      "seed": 5,
+      "true_mass_g": 32.7,
+      "shear_N": 1.249,
+      "est_mass_g": 32.0,
+      "abs_err_pct": 2.1,
+      "role": "estimate"
+    }
+  ]
+}

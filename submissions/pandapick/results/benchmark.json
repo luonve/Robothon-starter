@@ -31,7 +31,11 @@
     "fragile_open_mean_settled_N": 1.83,
     "fragile_closed_intact": 6,
     "fragile_open_cracked": 6,
-    "fragile_n_seeds": 6
+    "fragile_n_seeds": 6,
+    "payload_pearson_r": 1.0,
+    "payload_mean_abs_err_pct": 2.53,
+    "payload_max_abs_err_pct": 3.8,
+    "payload_calibration_gain_N_per_kg": 38.97
   },
   "tasks": [
     {

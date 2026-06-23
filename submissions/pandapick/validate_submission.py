@@ -33,7 +33,8 @@ def main() -> int:
                 "pandapick/model.py", "pandapick/control.py", "pandapick/pipeline.py",
                 "pandapick/benchmark.py", "pandapick/record_demo.py",
                 "results/ablation.json", "results/rubric_scorecard.json",
-                "results/fragile.json", "results/fragile_plot.png"]:
+                "results/fragile.json", "results/fragile_plot.png",
+                "results/payload.json", "results/payload_plot.png"]:
         ok &= _check(f"file present: {rel}", os.path.exists(os.path.join(HERE, rel)))
 
     bj = os.path.join(HERE, "results", "benchmark.json")
@@ -84,6 +85,21 @@ def main() -> int:
             ok &= _check("README cites the fragile force budget", str(fr.get("budget_N")) in rtxt, f"{fr.get('budget_N')} N")
             ok &= _check("README cites the INTACT / CRACKED split", "CRACK" in rtxt.upper() and "INTACT" in rtxt.upper(),
                          f"closed intact {fr.get('closed_intact_count')}/{fr.get('n_seeds')}, open cracked {fr.get('open_cracked_count')}")
+
+    # haptic payload ID: estimate sensor-grounded + README cites the same numbers
+    payp = os.path.join(HERE, "results", "payload.json")
+    if os.path.exists(payp):
+        py = json.load(open(payp, encoding="utf-8"))
+        ok &= _check("payload.json: estimate tracks true mass (Pearson r >= 0.95)",
+                     (py.get("pearson_r_mass_vs_shear") or 0) >= 0.95, f"r = {py.get('pearson_r_mass_vs_shear')}")
+        ok &= _check("payload.json: mean abs error < 6%", (py.get("mean_abs_err_pct") or 99) < 6.0,
+                     f"{py.get('mean_abs_err_pct')}%")
+        if os.path.exists(rd):
+            rtxt = open(rd, encoding="utf-8").read()
+            ok &= _check("README cites the payload-ID error", str(py.get("mean_abs_err_pct")) in rtxt,
+                         f"{py.get('mean_abs_err_pct')}%")
+            ok &= _check("README mentions haptic payload identification",
+                         "payload" in rtxt.lower() and ("shear" in rtxt.lower() or "haptic" in rtxt.lower()))
 
     # demo video: official 1-3 min window + size; keyframes storyboard present
     mp4 = os.path.join(HERE, "results", "pandapick_demo.mp4")

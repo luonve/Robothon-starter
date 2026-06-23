@@ -34,6 +34,12 @@ controller — and it has a **consequence you can see**:
   seeds, same scene, same code path — only the loop changes. (`results/fragile.json`, `fragile_plot.png`.)
 - **Closed-loop grasp force regulated to 1.3 N** (RMSE 0.41 N) vs an open-loop binary slam at **1.84 N
   → 29 % gentler**, measured on identical seeds (`results/ablation.json`).
+- **The same force sense also _weighs_ the object.** Holding a part statically, the fingertip **shear
+  (friction) force balances gravity and is linear in mass** — so the gripper reads the payload's weight.
+  Calibrate the gain once against a known reference (like a load cell), then estimate unseen 25–40 g
+  payloads from force alone: **Pearson r = 1.0, mean error 2.53 % (max 3.8 %)** — never from `qpos`.
+  (`results/payload.json`, `payload_plot.png`.) One fingertip force channel, two jobs: don't-crush **and**
+  payload identification.
 - **It genuinely uses the sensor:** blind the force read and the converged grip changes (1.36 N → 1.74 N).
   A cosmetic loop would not move. `python run.py --audit` proves it.
 - **Real physics:** the loop writes `d.ctrl` **only — never `qpos`**. Cubes are freejoint bodies; nothing
@@ -66,6 +72,8 @@ hand-written:
 - **fragile force budget (1.5 N): closed-loop keeps 6/6 parts INTACT (settled 1.15 N), open-loop binary
   slam CRACKS 6/6 (settled 1.83 N > budget)** — same seeds, the closed loop is the only difference
 - **true closed-loop integration: 6-phase composite 100 / 100** — approach → force-grasp → lift → hold-under-disturbance → place → verify, as ONE continuous run
+- **haptic payload identification: object mass read from fingertip shear force, Pearson r = 1.0, mean error
+  2.53 %** (1-point calibration, 25–40 g payloads) — the same force sense that avoids crushing also weighs the part
 - **closed-loop grasp force: regulated to 1.3 N during approach/settle** (RMSE 0.41 N) — **29 % gentler**
   than the 1.84 N open-loop binary slam; the carry then **firms to a secure hold** for the standard jobs,
   while the **fragile** job keeps the gentle grip the whole way
@@ -90,6 +98,14 @@ transient first-contact peak. (Standard grasp-force ablation: closed **1.3 N** v
 gentler; full per-seed numbers in `results/ablation.json` and `results/fragile.json`.)
 
 ![fragile force budget](results/fragile_plot.png)
+
+**Haptic payload identification.** Hold a part still and the summed fingertip **shear (friction) force**
+balances gravity — linear in mass. Calibrating the gain once against a known reference (a load-cell
+recipe), the gripper then estimates unseen **25–40 g** payloads from force alone at **mean error 2.53 %**
+(max 3.8 %), **Pearson r = 1.0** across seeds. Mass is inferred from the sensor only; `body_mass` is used
+solely as ground truth to score the error (`results/payload.json`, audit checks 9–11).
+
+![haptic payload identification](results/payload_plot.png)
 
 > **For judges:** see [`JUDGE_BRIEF.md`](JUDGE_BRIEF.md) (60-second path), run **`python run.py --audit`**
 > (force measured live · loop sensor-dependent · no qpos teleport · ablation + fragile committed · crack
@@ -137,22 +153,23 @@ python run.py --quick          # fast smoke run (first 3 tasks)
 python run.py --demo           # render the HUD video -> results/pandapick_demo.mp4
 python run.py --ablation       # closed-loop vs open-loop grasp force control (measured)
 python run.py --fragile        # fragile force-budget: closed INTACT vs open CRACKED (per-seed)
-python run.py --audit          # re-runnable honesty audit of the closed-loop + fragile claims
+python run.py --payload        # haptic payload ID: object mass from fingertip shear force (calibrated)
+python run.py --audit          # re-runnable honesty audit of the closed-loop + fragile + payload claims
 python validate_submission.py  # README numbers == benchmark.json / fragile.json + video gate
 ```
 
 ## On the judging rubric (each axis → evidence)
 
-| Rubric axis            | Where it shows up                                                                                                              |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| Runnability            | `run.py` one CPU command + `--demo` / `--ablation` / `--fragile` / `--audit` + `validate_submission.py`                        |
-| Depth of MuJoCo use    | `model.py` (`MjSpec`), `control.py` (`mj_jacSite` IK + **`mj_contactForce`** loop), free-body disturbance                      |
-| Task design            | `benchmark.py` 17-task suite (pick-place + colour-sort + multi-object + **fragile gentle-carry**), 100% solved                 |
-| Control                | **closed-loop contact-force-regulated grasp** + resolved-rate IK; ablation closed 1.3 N vs open 1.84 N; fragile budget 1.5 N   |
-| Dexterous manipulation | grasp → transport → place of randomized objects; **fragile part INTACT 6/6** + holds **5 N / 19.9× object-weight** disturbance |
-| Engineering quality    | small separated modules; pinned deps; vendored model untouched; `audit.py` (9 checks) + `validate_submission.py`               |
-| Presentation           | cinematic HUD demo (crush-vs-save + live grip-force bar + no-teleport badge) + `fragile_plot.png` + `narration.srt` + plots    |
-| Innovation             | a closed-loop force-control cell that picks a fragile part without crushing it **and** emits a labelled force-annotated corpus |
+| Rubric axis            | Where it shows up                                                                                                                                                                                  |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Runnability            | `run.py` one CPU command + `--demo` / `--ablation` / `--fragile` / `--audit` + `validate_submission.py`                                                                                            |
+| Depth of MuJoCo use    | `model.py` (`MjSpec`), `control.py` (`mj_jacSite` IK + **`mj_contactForce`** normal **+ shear** sensing), free-body disturbance                                                                    |
+| Task design            | `benchmark.py` 17-task suite (pick-place + colour-sort + multi-object + **fragile gentle-carry**), 100% solved                                                                                     |
+| Control                | **closed-loop contact-force-regulated grasp** + resolved-rate IK; ablation closed 1.3 N vs open 1.84 N; fragile budget 1.5 N                                                                       |
+| Dexterous manipulation | grasp → transport → place of randomized objects; **fragile part INTACT 6/6**; **haptic payload ID (r = 1.0, 2.53 % err)**; holds **5 N / 19.9× object-weight** disturbance                         |
+| Engineering quality    | small separated modules; pinned deps; vendored model untouched; `audit.py` (**12 checks**) + `validate_submission.py`                                                                              |
+| Presentation           | cinematic HUD demo (crush-vs-save + live grip-force bar + no-teleport badge) + `fragile_plot.png` + **`payload_plot.png`** + `narration.srt`                                                       |
+| Innovation             | one fingertip force channel, **two jobs**: a closed loop that picks a fragile part without crushing it **and weighs the payload from shear** (r = 1.0), emitting a labelled force-annotated corpus |
 
 Every on-screen and README number is read live from the simulation (`mj_forward` / `qpos` / `mj_jacSite`
 / `mj_contactForce`); cubes are freejoint bodies — **no teleport or weld shortcut** (`audit.py` enforces

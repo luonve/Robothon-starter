@@ -120,6 +120,22 @@ class IKController:
                 tot += abs(self._fbuf[0])    # thanh phan phap tuyen trong frame tiep xuc
         return tot
 
+    def read_grip_shear(self, cube_i: int) -> float:
+        """Tong do lon luc TIEP TUYEN (ma sat, N) tai cac tiep xuc fingertip<->cube_i, doc TRUC TIEP
+        tu mj_contactForce (thanh phan [1],[2] trong frame tiep xuc). Khi vat duoc giu tinh, luc ma sat
+        nay can bang trong luc -> ti le THUAN voi khoi luong payload (haptic load sensing). KHONG suy tu
+        qpos: day la tin hieu cam bien, dung cho payload identification (read_grip_force doc phap tuyen)."""
+        d, fg = self.d, self.meta.finger_geoms
+        cg = self.meta.cube_geom[cube_i]
+        tot = 0.0
+        for k in range(d.ncon):
+            con = d.contact[k]
+            g1, g2 = con.geom1, con.geom2
+            if (g1 in fg and g2 == cg) or (g2 in fg and g1 == cg):
+                mujoco.mj_contactForce(self.m, d, k, self._fbuf)
+                tot += float(np.hypot(self._fbuf[1], self._fbuf[2]))   # do lon tiep tuyen (ma sat)
+        return tot
+
     def grasp_to_force(self, cube_i: int, target_N: float = FORCE_TARGET_N, max_steps: int = 600,
                        phase: str = "grasp", firm: bool = True):
         """CLOSED-LOOP grasp: dong kep den khi cham (F>CONTACT_EPS) roi DIEU KHIEN P tren luc do

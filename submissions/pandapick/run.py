@@ -22,6 +22,7 @@ def main():
     ap.add_argument("--demo", action="store_true")
     ap.add_argument("--ablation", action="store_true", help="closed-loop vs open-loop grasp force control")
     ap.add_argument("--fragile", action="store_true", help="fragile force-budget: closed INTACT vs open CRACKED")
+    ap.add_argument("--payload", action="store_true", help="haptic payload ID: object mass from fingertip shear force")
     ap.add_argument("--audit", action="store_true", help="re-runnable honesty audit of the closed-loop claims")
     args = ap.parse_args()
 
@@ -47,6 +48,13 @@ def main():
         from pandapick.benchmark import run_fragile_budget
         print("[START] fragile force-budget: closed gentle (INTACT) vs open binary slam (CRACKED), identical seeds")
         print(json.dumps(run_fragile_budget(), indent=2))
+        return
+
+    if args.payload:
+        import json
+        from pandapick.benchmark import run_payload_id
+        print("[START] haptic payload identification: object mass from fingertip shear force (calibrated load readout)")
+        print(json.dumps(run_payload_id(), indent=2))
         return
 
     from pandapick.benchmark import run_all
