@@ -9,6 +9,13 @@ grip-force) step as a ready-made imitation-learning dataset.**
 _approach → force-regulated grasp → lift → hold against an external disturbance → precision place →
 verify_ — scored as a single composite (**100 / 100**), not six disconnected demos.
 
+**Why the loop matters — "Don't Crush It":** give the same gripper a fragile object with a 2.6 N force
+budget. An **open-loop binary grip crushes it _every_ time** (100 % crush, peak ≈ 2.9 N); the **closed-loop
+force-regulated grasp stays under budget 83 % of the time** (peak ≈ 2.1 N) — a committed per-seed
+closed-vs-open ablation (`results/fragile_ablation.json`). And because every step logs the measured
+contact force, the exported dataset is **force-labelled** — the crush-avoidance is _learnable_, an angle a
+plain pick-place dataset lacks.
+
 Runs on MuJoCo, CPU-only, in one command.
 
 ![PandaPick demo — closed-loop force-regulated pick-and-place and colour sorting](results/pandapick_demo.gif)
@@ -51,6 +58,7 @@ positions/colours per seed) — every number is measured from the MuJoCo rollout
 
 - **15 / 15 tasks solved, 100 %** task success rate
 - **true closed-loop integration: 6-phase composite 100 / 100** — approach → force-grasp → lift → hold-under-disturbance → place → verify, as ONE continuous run
+- **"Don't Crush It" (committed closed-vs-open ablation):** open-loop binary grip crushes a fragile object **100 %** of the time (peak ≈ 2.9 N > 2.6 N budget); closed-loop force-regulated grasp stays safe **83 %** (peak ≈ 2.1 N) — proves the feedback is causal
 - **closed-loop grasp force: regulated to 1.3 N during approach/settle** (mean over 6 seeds, range
   0.97–1.74 N, RMSE 0.41 N) — **29 % gentler** than the 1.84 N open-loop binary slam; the grip then
   **firms to a secure hold for the carry** (the parallel-jaw force band is too narrow to carry 4 cubes light)

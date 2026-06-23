@@ -25,7 +25,12 @@
       "disturb_hold",
       "place",
       "verify"
-    ]
+    ],
+    "fragile_force_budget_N": 2.6,
+    "fragile_closed_crush_avoid_rate": 0.833,
+    "fragile_open_crush_avoid_rate": 0.0,
+    "fragile_closed_peak_N": 2.09,
+    "fragile_open_peak_N": 2.9
   },
   "tasks": [
     {

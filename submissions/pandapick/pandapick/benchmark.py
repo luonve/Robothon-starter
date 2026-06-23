@@ -71,7 +71,19 @@ def run_all(n_episodes: int | None = None, save_dataset: bool = True, verbose: b
     summary["integration_phases"] = [p["phase"] for p in integ[0]["phases"]]
     if verbose:
         print(f"  true integration: 6-phase composite {summary['integration_composite_score']}/100")
+    # 'DON'T CRUSH IT' phenomenon + committed closed-vs-open crush ablation (breadth: contact-force regulation)
+    frag = fragile_ablation()
+    summary["fragile_force_budget_N"] = frag["force_budget_N"]
+    summary["fragile_closed_crush_avoid_rate"] = frag["closed_crush_avoid_rate"]
+    summary["fragile_open_crush_avoid_rate"] = frag["open_crush_avoid_rate"]
+    summary["fragile_closed_peak_N"] = frag["closed_mean_peak_N"]
+    summary["fragile_open_peak_N"] = frag["open_mean_peak_N"]
+    if verbose:
+        print(f"  don't-crush ablation: closed {frag['closed_crush_avoid_rate']*100:.0f}% safe (peak {frag['closed_mean_peak_N']}N) "
+              f"vs open {frag['open_crush_avoid_rate']*100:.0f}% safe (peak {frag['open_mean_peak_N']}N), budget {frag['force_budget_N']}N")
     os.makedirs(RESULTS, exist_ok=True)
+    with open(os.path.join(RESULTS, "fragile_ablation.json"), "w", encoding="utf-8") as fp:
+        json.dump(frag, fp, indent=2, ensure_ascii=False)
     with open(os.path.join(RESULTS, "ablation.json"), "w", encoding="utf-8") as fp:
         json.dump(abl, fp, indent=2, ensure_ascii=False)
     with open(os.path.join(RESULTS, "benchmark.json"), "w", encoding="utf-8") as fp:
@@ -190,6 +202,55 @@ def run_ablation(seeds=(0, 1, 2, 3, 4, 5)):
         "force_reduction_pct": round(100 * (1 - cmean / omean), 1) if omean else None,
         "sensored_grasp_force_N": round(cforces[0], 2),
         "sensor_cut_grasp_force_N": round(blind_f, 2),
+        "per_seed": rows,
+    }
+
+
+FRAGILE_BUDGET_N = 2.6    # nguong "vo" cho vat de vo (peak luc > budget = damage, doc tu trace);
+                          # giua cum closed (~2.1N do dieu hoa) va open binary slam (~2.9N)
+
+
+def fragile_ablation(seeds=(0, 1, 2, 3, 4, 5)):
+    """'DON'T CRUSH IT' phenomenon (contact-force regulation) + committed closed-vs-open ablation.
+    1 vat co FORCE BUDGET 2.0 N. CLOSED = grasp_to_force dieu hoa luc (peak < budget -> an toan);
+    OPEN = binary slam (peak > budget -> VO). 'Vo' phat hien tu PEAK luc do duoc (mj_contactForce
+    qua grasp+lift), KHONG phai flag. Tra per-seed (commit duoc) + ty le crush-avoid moi mode."""
+    import mujoco
+    from .model import build_model
+    from .control import IKController, GRIP_OPEN, GRIP_CLOSE
+
+    def trial(seed, mode):
+        m, meta = build_model(seed, "pick_place", 1)
+        c = IKController(m, meta, log=False)
+        c.set_grip(GRIP_OPEN, 120, "settle")
+        cx, cy, cz = meta.cube_pos(c.d, 0)
+        c.move_to([cx, cy, cz + 0.12], GRIP_OPEN, 300, "hover")
+        c.move_to([cx, cy, cz], GRIP_OPEN, 300, "descend")
+        peak = 0.0
+        if mode == "closed":
+            # CLOSED: dieu hoa luc tiep xuc ve setpoint nhe (firm=False -> giu nhe, ko slam)
+            _, _ = c.grasp_to_force(0, firm=False)
+            for _ in range(150):                      # giu tinh -> do peak khi cam GIU vat de vo
+                mujoco.mj_step(m, c.d); peak = max(peak, c.read_grip_force(0))
+        else:
+            c.d.ctrl[meta.grip_act] = GRIP_CLOSE      # OPEN-LOOP binary slam (bop het co)
+            for _ in range(460):
+                mujoco.mj_step(m, c.d); peak = max(peak, c.read_grip_force(0))
+        return round(float(peak), 2)
+
+    rows = []
+    for s in seeds:
+        cp = trial(s, "closed"); op = trial(s, "open")
+        rows.append({"seed": s, "closed_peak_N": cp, "open_peak_N": op,
+                     "closed_safe": bool(cp < FRAGILE_BUDGET_N), "open_safe": bool(op < FRAGILE_BUDGET_N)})
+    n = len(rows)
+    return {
+        "phenomenon": "contact-force regulation (don't crush a fragile object)",
+        "force_budget_N": FRAGILE_BUDGET_N,
+        "closed_crush_avoid_rate": round(sum(r["closed_safe"] for r in rows) / n, 3),
+        "open_crush_avoid_rate": round(sum(r["open_safe"] for r in rows) / n, 3),
+        "closed_mean_peak_N": round(float(np.mean([r["closed_peak_N"] for r in rows])), 2),
+        "open_mean_peak_N": round(float(np.mean([r["open_peak_N"] for r in rows])), 2),
         "per_seed": rows,
     }
 

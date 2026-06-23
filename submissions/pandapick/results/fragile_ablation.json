@@ -1,0 +1,52 @@
+{
+  "phenomenon": "contact-force regulation (don't crush a fragile object)",
+  "force_budget_N": 2.6,
+  "closed_crush_avoid_rate": 0.833,
+  "open_crush_avoid_rate": 0.0,
+  "closed_mean_peak_N": 2.09,
+  "open_mean_peak_N": 2.9,
+  "per_seed": [
+    {
+      "seed": 0,
+      "closed_peak_N": 1.96,
+      "open_peak_N": 2.63,
+      "closed_safe": true,
+      "open_safe": false
+    },
+    {
+      "seed": 1,
+      "closed_peak_N": 2.1,
+      "open_peak_N": 2.78,
+      "closed_safe": true,
+      "open_safe": false
+    },
+    {
+      "seed": 2,
+      "closed_peak_N": 2.1,
+      "open_peak_N": 3.0,
+      "closed_safe": true,
+      "open_safe": false
+    },
+    {
+      "seed": 3,
+      "closed_peak_N": 2.0,
+      "open_peak_N": 2.9,
+      "closed_safe": true,
+      "open_safe": false
+    },
+    {
+      "seed": 4,
+      "closed_peak_N": 2.77,
+      "open_peak_N": 3.11,
+      "closed_safe": false,
+      "open_safe": false
+    },
+    {
+      "seed": 5,
+      "closed_peak_N": 1.63,
+      "open_peak_N": 3.0,
+      "closed_safe": true,
+      "open_safe": false
+    }
+  ]
+}
