@@ -14,11 +14,14 @@ import time
 
 
 def main():
+    from pandapick.benchmark import TASK_SUITE
+    n_full = len(TASK_SUITE)
     ap = argparse.ArgumentParser(description="PandaPick closed-loop force-regulated manipulation cell")
-    ap.add_argument("--tasks", type=int, default=None, help="limit to first N tasks (default: full 15)")
+    ap.add_argument("--tasks", type=int, default=None, help=f"limit to first N tasks (default: full {n_full})")
     ap.add_argument("--quick", action="store_true")
     ap.add_argument("--demo", action="store_true")
     ap.add_argument("--ablation", action="store_true", help="closed-loop vs open-loop grasp force control")
+    ap.add_argument("--fragile", action="store_true", help="fragile force-budget: closed INTACT vs open CRACKED")
     ap.add_argument("--audit", action="store_true", help="re-runnable honesty audit of the closed-loop claims")
     args = ap.parse_args()
 
@@ -39,9 +42,16 @@ def main():
         print(json.dumps(run_ablation(), indent=2))
         return
 
+    if args.fragile:
+        import json
+        from pandapick.benchmark import run_fragile_budget
+        print("[START] fragile force-budget: closed gentle (INTACT) vs open binary slam (CRACKED), identical seeds")
+        print(json.dumps(run_fragile_budget(), indent=2))
+        return
+
     from pandapick.benchmark import run_all
     n = 3 if args.quick else args.tasks
-    print(f"[START] PandaPick — {'15' if n is None else n}-task benchmark")
+    print(f"[START] PandaPick — {n_full if n is None else n}-task benchmark")
     t0 = time.time()
     summary, rows = run_all(n_episodes=n)
     print("\n========== SUMMARY ==========")

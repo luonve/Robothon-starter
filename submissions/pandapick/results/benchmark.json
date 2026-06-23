@@ -1,13 +1,13 @@
 {
   "summary": {
-    "n_tasks": 15,
-    "tasks_fully_solved": 15,
+    "n_tasks": 17,
+    "tasks_fully_solved": 17,
     "task_success_rate": 1.0,
     "object_pick_rate": 1.0,
     "object_place_rate": 1.0,
-    "mean_place_err_mm": 13.8,
+    "mean_place_err_mm": 13.3,
     "control": "closed-loop contact-force-regulated grasp (mj_contactForce) + resolved-rate (Jacobian) IK + smooth interpolated trajectories",
-    "dataset_steps": 132712,
+    "dataset_steps": 144230,
     "obs_dim": 14,
     "action_dim": 7,
     "grasp_holds_disturbance_N": 5.0,
@@ -25,7 +25,13 @@
       "disturb_hold",
       "place",
       "verify"
-    ]
+    ],
+    "fragile_budget_N": 1.5,
+    "fragile_closed_mean_settled_N": 1.15,
+    "fragile_open_mean_settled_N": 1.83,
+    "fragile_closed_intact": 6,
+    "fragile_open_cracked": 6,
+    "fragile_n_seeds": 6
   },
   "tasks": [
     {
@@ -230,6 +236,36 @@
       "n_records": 9032,
       "task_id": "T15 sort-F",
       "episode": 14
+    },
+    {
+      "seed": 3,
+      "task": "fragile",
+      "n": 2,
+      "disturb_N": 0.0,
+      "mode": "closed",
+      "placed": 2,
+      "mean_place_err_m": 0.0115,
+      "gentle_carry": true,
+      "picked": 2,
+      "success": 2,
+      "n_records": 5746,
+      "task_id": "T16 fragile-A",
+      "episode": 15
+    },
+    {
+      "seed": 7,
+      "task": "fragile",
+      "n": 2,
+      "disturb_N": 0.0,
+      "mode": "closed",
+      "placed": 2,
+      "mean_place_err_m": 0.0105,
+      "gentle_carry": true,
+      "picked": 2,
+      "success": 2,
+      "n_records": 5772,
+      "task_id": "T17 fragile-B",
+      "episode": 16
     }
   ]
 }

@@ -1,0 +1,56 @@
+{
+  "metric": "fragile force-budget (SETTLED tail-mean contact force vs stated part tolerance)",
+  "settled_force_N_definition": "mean of the regulated-grasp tail window (control.last_settled_force) for closed, hold-window tail-mean for open; NOT peak, NOT last-read contact",
+  "budget_N": 1.5,
+  "budget_rationale": "part rated to 1.5 N sustained crush tolerance; the SUSTAINED (settled) grip force is the damaging quantity, not the transient first-contact peak",
+  "proxy_note": "force-budget proxy on a RIGID cube (no soft-body): CRACKED = settled force exceeded the tolerance; the cube does NOT physically deform or shatter. CRACKED is an ablation metric, NEVER counted as a task failure.",
+  "closed_mean_settled_force_N": 1.15,
+  "open_mean_settled_force_N": 1.83,
+  "closed_intact_count": 6,
+  "open_cracked_count": 6,
+  "n_seeds": 6,
+  "per_seed": [
+    {
+      "seed": 0,
+      "closed_settled_force_N": 1.12,
+      "closed_verdict": "INTACT",
+      "open_settled_force_N": 1.78,
+      "open_verdict": "CRACKED"
+    },
+    {
+      "seed": 1,
+      "closed_settled_force_N": 1.2,
+      "closed_verdict": "INTACT",
+      "open_settled_force_N": 1.8,
+      "open_verdict": "CRACKED"
+    },
+    {
+      "seed": 2,
+      "closed_settled_force_N": 1.15,
+      "closed_verdict": "INTACT",
+      "open_settled_force_N": 1.84,
+      "open_verdict": "CRACKED"
+    },
+    {
+      "seed": 3,
+      "closed_settled_force_N": 1.15,
+      "closed_verdict": "INTACT",
+      "open_settled_force_N": 1.87,
+      "open_verdict": "CRACKED"
+    },
+    {
+      "seed": 4,
+      "closed_settled_force_N": 0.98,
+      "closed_verdict": "INTACT",
+      "open_settled_force_N": 1.87,
+      "open_verdict": "CRACKED"
+    },
+    {
+      "seed": 5,
+      "closed_settled_force_N": 1.28,
+      "closed_verdict": "INTACT",
+      "open_settled_force_N": 1.84,
+      "open_verdict": "CRACKED"
+    }
+  ]
+}

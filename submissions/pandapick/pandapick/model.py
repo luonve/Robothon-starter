@@ -71,7 +71,7 @@ def build_spec(scene: dict) -> "mujoco.MjSpec":
         bx, by = STACK_PAD
         pad = wb.add_geom(); pad.name = "stack_pad"; pad.type = mujoco.mjtGeom.mjGEOM_BOX
         pad.size = [0.04, 0.04, 0.004]; pad.pos = [bx, by, 0.004]; pad.rgba = [0.4, 0.4, 0.45, 1]
-        if scene["task"] == "pick_place":
+        if scene["task"] in ("pick_place", "fragile"):   # fragile dung cung tote/bin nhu pick_place
             _add_bin(wb, "bin_R", bx, by, (0.26, 0.45, 0.38, 1))
     return spec
 

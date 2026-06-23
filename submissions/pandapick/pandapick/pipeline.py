@@ -11,9 +11,11 @@ from .model import build_model, HALF, FEEDER_TOP_Z, SORT_BINS, STACK_PAD
 from .control import IKController, GRIP_OPEN, GRIP_CLOSE
 
 
-def _pick_place_one(c, meta, i, dest_xy, dest_z, precise=False, disturb_N=0.0, mode="closed"):
-    """mode='closed' -> grasp DIEU KHIEN LUC (grasp_to_force regulate ve setpoint roi firm carry);
-    mode='open' -> baseline binary close (de ablation chat luong dieu khien luc)."""
+def _pick_place_one(c, meta, i, dest_xy, dest_z, precise=False, disturb_N=0.0, mode="closed", firm=True):
+    """mode='closed' -> grasp DIEU KHIEN LUC (grasp_to_force regulate ve setpoint); mode='open' ->
+    baseline binary close (ablation chat luong dieu khien luc).
+    firm=True -> sau regulate bop chac (GRIP_CLOSE) cho carry vung; firm=False -> GIU GRIP NHE (gia tri
+    regulate) suot carry -> dung cho task 'fragile' (luc settled thuc su nhe toi luc dat, ko bi firm-up undo)."""
     c.active_cube = i
     cube = meta.cube_pos(c.d, i)
     cx, cy, cz = cube
@@ -23,7 +25,7 @@ def _pick_place_one(c, meta, i, dest_xy, dest_z, precise=False, disturb_N=0.0, m
     c.move_to([cx, cy, cz + 0.12], GRIP_OPEN, 380, "hover")
     c.move_to([cx, cy, cz], GRIP_OPEN, 380, "descend")
     if mode == "closed":
-        _, hold = c.grasp_to_force(i, phase="grasp")        # CLOSED-LOOP: dong den luc muc tieu
+        _, hold = c.grasp_to_force(i, phase="grasp", firm=firm)   # CLOSED-LOOP: dong den luc muc tieu (firm tuy task)
     else:
         c.set_grip(GRIP_CLOSE, 460, "grasp"); hold = GRIP_CLOSE   # OPEN-LOOP baseline: binary slam
     # FREEZE ctrl kep o gia tri hoi tu suot lift/transport (chong vong lap chong lai spike quan tinh)
@@ -75,6 +77,20 @@ def run_episode(seed, task="pick_place", n=3, log=False, renderer=None, cam=None
             in_bin = np.linalg.norm(cf[:2] - np.array([bx, by])) < 0.05 and cf[2] < 0.12
             placeds += int(ok and in_bin)
         res.update({"sorted_correct": int(placeds)})
+    elif task == "fragile":
+        # FRAGILE: pick-place voi GRIP NHE suot carry (firm=False) — luc settled (~1.15N) giu nguyen
+        # toi luc dat, ko bi firm-up bop chac undo. Day la job that chay duoc o che do nhe (place 100%);
+        # tuong phan crush-vs-save (open-loop slam lam vo) nam o ablation run_fragile_budget (fragile.json).
+        bx, by = STACK_PAD
+        for i in range(n):
+            ok = _pick_place_one(c, meta, i, (bx, by), HALF + 0.02, disturb_N=disturb_N, mode=mode, firm=False)
+            picks += int(ok)
+            cf = meta.cube_pos(c.d, i)
+            in_bin = np.linalg.norm(cf[:2] - np.array([bx, by])) < 0.06 and cf[2] < 0.14
+            placeds += int(ok and in_bin)
+            errs.append(float(np.linalg.norm(cf[:2] - np.array([bx, by]))))
+        res.update({"placed": int(placeds), "mean_place_err_m": round(float(np.mean(errs)), 4) if errs else None,
+                    "gentle_carry": True})
     else:   # pick_place
         bx, by = STACK_PAD
         for i in range(n):

@@ -46,6 +46,7 @@ class IKController:
         self.force_log = []           # luc kep do duoc moi buoc (closed-loop grasp)
         self.last_force_rmse = None   # RMSE bam luc muc tieu cua lan grasp gan nhat (N)
         self.last_grasp_force = None  # luc kep do duoc sau khi dieu khien (N)
+        self.last_settled_force = None  # tail-mean luc regulate (settled) — metric cho fragile-budget (KHONG dung peak/last)
         self._grasp_ctrl = GRIP_CLOSE # ctrl kep hoi tu sau grasp_to_force (freeze khi lift/transport)
         self._fbuf = np.zeros(6)      # buffer cho mj_contactForce (tai dung, khong cap-phat moi buoc)
         self.reset()
@@ -129,6 +130,7 @@ class IKController:
         m, d, ga = self.m, self.d, self.meta.grip_act
         ctrl = float(d.ctrl[ga]); f_ema = 0.0; settled = 0; touched = False
         reg_forces = []
+        self.last_settled_force = None   # reset moi lan grasp (chi set khi regulate thanh cong)
         for step in range(max_steps):
             F = self.read_grip_force(cube_i)
             f_ema = (1.0 - FORCE_EMA) * f_ema + FORCE_EMA * F
@@ -156,6 +158,10 @@ class IKController:
         tail = reg_forces[-40:] if reg_forces else [self.read_grip_force(cube_i)]
         self.last_force_rmse = float(np.sqrt(np.mean([(f - target_N) ** 2 for f in tail])))
         self.last_grasp_force = float(self.read_grip_force(cube_i))   # luc dat duoc (do that)
+        # SETTLED force = trung binh cua s: regulate (tail-mean) — metric DUY NHAT cho fragile-budget.
+        # KHONG dung peak (spike first-contact 1.5-2.5N) lan last_grasp_force (committed trong ablation,
+        # straddle budget) -> tail-mean tach sach closed (~0.6-1.3N) vs open binary (~1.8N).
+        self.last_settled_force = float(np.mean(tail))
         if not firm:                                     # giu grip NHE (band dieu khien) cho kich ban ablation
             self._grasp_ctrl = ctrl
             return self.last_grasp_force, ctrl

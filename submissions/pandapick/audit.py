@@ -78,6 +78,29 @@ def main():
     # 5. The grasp terminates on FORCE CONVERGENCE, not a hard-coded step count.
     check("grasp is force-terminated, not time-scripted", "settled >= 12" in src)
 
+    # 6-8. Fragile force-budget claim, audited with the SAME rigor as the ablation.
+    fp = os.path.join(HERE, "results", "fragile.json")
+    frag = json.load(open(fp, encoding="utf-8")) if os.path.exists(fp) else {}
+    per = frag.get("per_seed", [])
+    keys = set(k for r in per for k in r)
+    has_settled = ("closed_settled_force_N" in keys) and ("open_settled_force_N" in keys)
+    no_peak_or_last = not any(("peak" in k) or k in ("closed_force_N", "open_force_N") for k in keys)
+    defn = str(frag.get("settled_force_N_definition", "")).lower()
+    # 6. HARD GUARD: verdict must be gated on SETTLED tail-mean, never the transient peak or last-read
+    #    contact (peak spikes to ~2.5N on first contact; last-read straddles the budget in ablation.json).
+    check("fragile verdict gated on SETTLED force (not peak / not last-read)",
+          os.path.exists(fp) and has_settled and no_peak_or_last and "settled" in defn and "not peak" in defn,
+          f"settled_keys={has_settled} no_peak/last={no_peak_or_last}")
+    # 7. The budget cleanly separates closed (gentle) < budget < open (binary), >=5 committed seeds.
+    bud = frag.get("budget_N", 0)
+    cm = frag.get("closed_mean_settled_force_N", 9.0); om = frag.get("open_mean_settled_force_N", 0.0)
+    check("fragile budget separates closed < budget < open (settled, >=5 seeds)",
+          len(per) >= 5 and cm < bud < om, f"closed {cm} < {bud} < open {om} ({len(per)} seeds)")
+    # 8. Every closed grasp is INTACT and every open binary-slam is CRACKED (the committed contrast).
+    check("fragile: closed INTACT on all seeds, open binary CRACKED on all seeds",
+          len(per) >= 5 and frag.get("closed_intact_count") == len(per) and frag.get("open_cracked_count") == len(per),
+          f"closed intact {frag.get('closed_intact_count')}/{len(per)}, open cracked {frag.get('open_cracked_count')}/{len(per)}")
+
     print("RESULT:", "ALL CHECKS PASS" if ok else "SOME CHECKS FAILED")
     sys.exit(0 if ok else 1)
 

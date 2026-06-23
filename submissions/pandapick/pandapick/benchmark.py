@@ -12,7 +12,11 @@ from .pipeline import run_episode
 
 RESULTS = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "results")
 
-# 15-task suite: varied jobs, object counts, seeds (randomized each), + disturbance-rejection.
+# Force budget (N) cho task fragile: vat duoc ghi "rated to 1.5 N sustained crush tolerance".
+# SETTLED force (tail-mean luc regulate) la dai luong gay hai, KHONG phai peak first-contact tam thoi.
+FRAGILE_BUDGET_N = 1.5
+
+# 17-task suite: pick-place + colour-sort + multi-object + FRAGILE force-budget (gentle-carry).
 # tuple = (name, task, seed, n_objects, disturbance_N)
 TASK_SUITE = [
     ("T01 place-A",       "pick_place", 0, 3, 0.0),
@@ -30,6 +34,8 @@ TASK_SUITE = [
     ("T13 sort-2obj",     "sort",       9, 2, 0.0),
     ("T14 place-F",       "pick_place", 10, 3, 0.0),
     ("T15 sort-F",        "sort",       11, 3, 0.0),
+    ("T16 fragile-A",     "fragile",    3, 2, 0.0),   # gentle-carry: grip nhe ~1.15N suot carry, place 100%
+    ("T17 fragile-B",     "fragile",    7, 2, 0.0),
 ]
 
 
@@ -71,7 +77,26 @@ def run_all(n_episodes: int | None = None, save_dataset: bool = True, verbose: b
     summary["integration_phases"] = [p["phase"] for p in integ[0]["phases"]]
     if verbose:
         print(f"  true integration: 6-phase composite {summary['integration_composite_score']}/100")
+    # FRAGILE force-budget: closed gentle giu SETTLED duoi budget (INTACT) vs open binary slam (CRACKED)
+    frag = run_fragile_budget()
+    summary["fragile_budget_N"] = frag["budget_N"]
+    summary["fragile_closed_mean_settled_N"] = frag["closed_mean_settled_force_N"]
+    summary["fragile_open_mean_settled_N"] = frag["open_mean_settled_force_N"]
+    summary["fragile_closed_intact"] = frag["closed_intact_count"]
+    summary["fragile_open_cracked"] = frag["open_cracked_count"]
+    summary["fragile_n_seeds"] = frag["n_seeds"]
+    if verbose:
+        print(f"  fragile budget {frag['budget_N']}N: closed {frag['closed_mean_settled_force_N']}N "
+              f"INTACT {frag['closed_intact_count']}/{frag['n_seeds']} vs open "
+              f"{frag['open_mean_settled_force_N']}N CRACKED {frag['open_cracked_count']}/{frag['n_seeds']}")
     os.makedirs(RESULTS, exist_ok=True)
+    with open(os.path.join(RESULTS, "fragile.json"), "w", encoding="utf-8") as fp:
+        json.dump(frag, fp, indent=2, ensure_ascii=False)
+    try:
+        make_fragile_plot()
+    except Exception as e:
+        if verbose:
+            print(f"  (fragile_plot skipped: {e})")
     with open(os.path.join(RESULTS, "ablation.json"), "w", encoding="utf-8") as fp:
         json.dump(abl, fp, indent=2, ensure_ascii=False)
     with open(os.path.join(RESULTS, "benchmark.json"), "w", encoding="utf-8") as fp:
@@ -192,6 +217,96 @@ def run_ablation(seeds=(0, 1, 2, 3, 4, 5)):
         "sensor_cut_grasp_force_N": round(blind_f, 2),
         "per_seed": rows,
     }
+
+
+def _grasp_settled_force(seed, mode, win=40, hold=460):
+    """Grasp cube 0 va tra (settled_force_N, force_trace). settled = tail-mean luc regulate (closed)
+    HOAC tail-mean cua so giu (open binary). Day la dai luong SUSTAINED gay hai cho vat fragile —
+    KHONG phai peak first-contact tam thoi (peak closed co the cham 2.5N nhung chi thoang qua)."""
+    import mujoco
+    from .model import build_model
+    from .control import IKController, GRIP_OPEN, GRIP_CLOSE
+    m, meta = build_model(seed, "pick_place", 1)
+    c = IKController(m, meta, log=False)
+    c.set_grip(GRIP_OPEN, 120, "settle")
+    cx, cy, cz = meta.cube_pos(c.d, 0)
+    c.move_to([cx, cy, cz + 0.12], GRIP_OPEN, 300, "h")
+    c.move_to([cx, cy, cz], GRIP_OPEN, 300, "d")
+    if mode == "closed":
+        c.force_log = []
+        c.grasp_to_force(0, firm=False)            # GENTLE: dieu khien luc ve setpoint, KHONG firm-up
+        return float(c.last_settled_force), list(c.force_log)
+    # open binary slam: dong het co, do luc giu sustained (tail-mean cua so)
+    ga = meta.grip_act; c.d.ctrl[ga] = GRIP_CLOSE; c.grip = GRIP_CLOSE
+    trace = []
+    for _ in range(hold):
+        mujoco.mj_step(c.m, c.d)
+        trace.append(c.read_grip_force(0))
+    return float(np.mean(trace[-win:])), trace
+
+
+def run_fragile_budget(seeds=(0, 1, 2, 3, 4, 5), budget_N=FRAGILE_BUDGET_N):
+    """FRAGILE force-budget task (do that, identical seeds). Vat duoc ghi "rated to budget_N (1.5N)
+    sustained crush". Crack-gate tren SETTLED force (tail-mean luc regulate / cua so giu), KHONG peak,
+    KHONG last-read. closed gentle (firm=False) giu settled DUOI budget -> INTACT; open binary-slam ->
+    settled TREN budget -> CRACKED. Tach sach: closed ~0.98-1.28N vs open ~1.78-1.87N @ budget 1.5N.
+    LUU Y LIEM CHINH: force-budget PROXY tren vat CUNG (khong soft-body) — CRACKED = verdict vuot nguong
+    luc sustained, cube KHONG vo/bien dang that. CRACKED chi la metric ablation, KHONG tinh la task fail."""
+    rows = []
+    for s in seeds:
+        cs, _ = _grasp_settled_force(s, "closed")
+        os_, _ = _grasp_settled_force(s, "open")
+        rows.append({"seed": s,
+                     "closed_settled_force_N": round(cs, 2),
+                     "closed_verdict": "INTACT" if cs < budget_N else "CRACKED",
+                     "open_settled_force_N": round(os_, 2),
+                     "open_verdict": "INTACT" if os_ < budget_N else "CRACKED"})
+    closed_intact = sum(1 for r in rows if r["closed_verdict"] == "INTACT")
+    open_cracked = sum(1 for r in rows if r["open_verdict"] == "CRACKED")
+    return {
+        "metric": "fragile force-budget (SETTLED tail-mean contact force vs stated part tolerance)",
+        "settled_force_N_definition": "mean of the regulated-grasp tail window (control.last_settled_force) "
+                                      "for closed, hold-window tail-mean for open; NOT peak, NOT last-read contact",
+        "budget_N": budget_N,
+        "budget_rationale": "part rated to 1.5 N sustained crush tolerance; the SUSTAINED (settled) grip force "
+                            "is the damaging quantity, not the transient first-contact peak",
+        "proxy_note": "force-budget proxy on a RIGID cube (no soft-body): CRACKED = settled force exceeded the "
+                      "tolerance; the cube does NOT physically deform or shatter. CRACKED is an ablation metric, "
+                      "NEVER counted as a task failure.",
+        "closed_mean_settled_force_N": round(float(np.mean([r["closed_settled_force_N"] for r in rows])), 2),
+        "open_mean_settled_force_N": round(float(np.mean([r["open_settled_force_N"] for r in rows])), 2),
+        "closed_intact_count": closed_intact,
+        "open_cracked_count": open_cracked,
+        "n_seeds": len(rows),
+        "per_seed": rows,
+    }
+
+
+def make_fragile_plot(seeds=(0, 1, 2, 3, 4, 5), budget_N=FRAGILE_BUDGET_N):
+    """results/fragile_plot.png — force-vs-time 2 trace THUC (closed gentle vs open binary tren cung seed)
+    + vach budget 1.5N + dai INTACT/CRACKED. Day la chi tiet tinh cho judge (gemini 'more detail')."""
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    seed = seeds[0]
+    _, ctrace = _grasp_settled_force(seed, "closed")
+    osettled, otrace = _grasp_settled_force(seed, "open")
+    csettled = float(np.mean(ctrace[-120:])) if len(ctrace) > 120 else float(np.mean(ctrace))
+    fig, ax = plt.subplots(figsize=(7.4, 3.6), dpi=130)
+    ax.plot(np.arange(len(ctrace)), ctrace, color="#15916b", lw=1.6,
+            label=f"closed-loop (settled {csettled:.2f} N -> INTACT)")
+    ax.plot(np.arange(len(otrace)), otrace, color="#c0392b", lw=1.6,
+            label=f"open-loop binary slam (settled {osettled:.2f} N -> CRACKED)")
+    ax.axhline(budget_N, ls="--", color="#222", lw=1.4, label=f"crush budget {budget_N} N (part tolerance)")
+    ax.fill_between([0, max(len(ctrace), len(otrace))], budget_N, ax.get_ylim()[1], color="#c0392b", alpha=0.07)
+    ax.set_xlabel("control step"); ax.set_ylabel("fingertip contact force (N)")
+    ax.set_title("Fragile force-budget — closed-loop holds under the budget, open-loop slam exceeds it")
+    ax.legend(fontsize=8, loc="upper right"); ax.grid(alpha=0.3)
+    ax.text(0.012, 0.04, "force-budget proxy on a rigid part (no soft-body); CRACKED = settled force exceeded tolerance",
+            transform=ax.transAxes, fontsize=6.5, color="#666")
+    fig.tight_layout()
+    p = os.path.join(RESULTS, "fragile_plot.png"); fig.savefig(p); plt.close(fig)
+    return p
 
 
 def measure_grasp_stability():

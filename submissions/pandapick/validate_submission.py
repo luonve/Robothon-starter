@@ -32,7 +32,8 @@ def main() -> int:
     for rel in ["README.md", "requirements.txt", "run.py", "audit.py", "JUDGE_BRIEF.md",
                 "pandapick/model.py", "pandapick/control.py", "pandapick/pipeline.py",
                 "pandapick/benchmark.py", "pandapick/record_demo.py",
-                "results/ablation.json", "results/rubric_scorecard.json"]:
+                "results/ablation.json", "results/rubric_scorecard.json",
+                "results/fragile.json", "results/fragile_plot.png"]:
         ok &= _check(f"file present: {rel}", os.path.exists(os.path.join(HERE, rel)))
 
     bj = os.path.join(HERE, "results", "benchmark.json")
@@ -40,7 +41,7 @@ def main() -> int:
     if os.path.exists(bj):
         raw = json.load(open(bj, encoding="utf-8"))
         s = raw.get("summary", raw)
-        ok &= _check("benchmark: 15-task success rate", s.get("task_success_rate") == 1.0, str(s.get("task_success_rate")))
+        ok &= _check("benchmark: full-suite success rate", s.get("task_success_rate") == 1.0, str(s.get("task_success_rate")))
         ok &= _check("benchmark: mean placement error", "mean_place_err_mm" in s, f"{s.get('mean_place_err_mm')} mm")
         ok &= _check("benchmark: grasp-stability (x object weight)", "disturbance_x_object_weight" in s,
                      f"{s.get('disturbance_x_object_weight')}x")
@@ -64,6 +65,25 @@ def main() -> int:
                      f"{s.get('disturbance_x_object_weight')}x")
         ok &= _check("README cites the closed-loop grasp force", str(s.get("closed_loop_grasp_force_N")) in rtxt,
                      f"{s.get('closed_loop_grasp_force_N')} N")
+        ok &= _check("README task count matches the benchmark suite size (no stale '15-task')",
+                     f"{s.get('n_tasks')}-task" in rtxt and "15-task" not in rtxt, f"{s.get('n_tasks')}-task")
+
+    # fragile force-budget: committed metric must be SETTLED, and README must cite the same numbers
+    fragp = os.path.join(HERE, "results", "fragile.json")
+    if os.path.exists(fragp):
+        fr = json.load(open(fragp, encoding="utf-8"))
+        per0 = (fr.get("per_seed") or [{}])[0]
+        ok &= _check("fragile.json metric is SETTLED force (not peak / not last-read)",
+                     "closed_settled_force_N" in per0 and "open_settled_force_N" in per0
+                     and not any("peak" in k for k in per0))
+        ok &= _check("fragile budget separates closed < budget < open",
+                     fr.get("closed_mean_settled_force_N", 9) < fr.get("budget_N", 0) < fr.get("open_mean_settled_force_N", 0),
+                     f"{fr.get('closed_mean_settled_force_N')} < {fr.get('budget_N')} < {fr.get('open_mean_settled_force_N')}")
+        if os.path.exists(rd):
+            rtxt = open(rd, encoding="utf-8").read()
+            ok &= _check("README cites the fragile force budget", str(fr.get("budget_N")) in rtxt, f"{fr.get('budget_N')} N")
+            ok &= _check("README cites the INTACT / CRACKED split", "CRACK" in rtxt.upper() and "INTACT" in rtxt.upper(),
+                         f"closed intact {fr.get('closed_intact_count')}/{fr.get('n_seeds')}, open cracked {fr.get('open_cracked_count')}")
 
     # demo video: official 1-3 min window + size; keyframes storyboard present
     mp4 = os.path.join(HERE, "results", "pandapick_demo.mp4")

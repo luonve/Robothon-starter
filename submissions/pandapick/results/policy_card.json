@@ -14,6 +14,7 @@
     "pick_place",
     "colour_sort (R/G/B)",
     "multi-object (2-4 cubes)",
+    "fragile (gentle-carry under a 1.5 N force budget)",
     "grasp-stability under disturbance"
   ],
   "inputs": [
@@ -30,7 +31,7 @@
     "phase label"
   ],
   "dataset": {
-    "steps": 132712,
+    "steps": 144230,
     "format": "results/demo_dataset.npz",
     "columns": [
       "qpos",
@@ -47,11 +48,17 @@
   },
   "measured_metrics": {
     "task_success_rate": 1.0,
-    "mean_place_err_mm": 13.8,
+    "n_tasks": 17,
+    "mean_place_err_mm": 13.3,
     "closed_loop_grasp_force_N": 1.3,
     "closed_loop_force_rmse_N": 0.414,
     "open_loop_binary_force_N": 1.84,
     "force_reduction_vs_open_pct": 29.3,
+    "fragile_budget_N": 1.5,
+    "fragile_closed_settled_force_N": 1.15,
+    "fragile_open_settled_force_N": 1.83,
+    "fragile_closed_intact": "6/6",
+    "fragile_open_cracked": "6/6",
     "grasp_holds_disturbance_N": 5.0,
     "disturbance_x_object_weight": 19.9
   },
