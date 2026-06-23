@@ -13,6 +13,7 @@ from .model import Meta, HOME
 # gripper: ctrl 255 = fully open, 0 = fully closed
 GRIP_OPEN = 255.0
 GRIP_CLOSE = 0.0
+SLEW_RAMP = 0.6   # mac dinh noi suy quy dao; ablation dat 1.0 (hard-slew) de do tac dong
 # gripper points down (grasp-site z-axis -> world -z)
 R_DOWN = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1.0]])
 
@@ -88,11 +89,14 @@ class IKController:
             raw = self._renderer.render().copy()
             self.frames.append(self.compose(raw) if self.compose else raw)
 
-    def move_to(self, target_pos, grip, steps: int = 500, phase: str = None, ramp_frac: float = 0.6):
+    def move_to(self, target_pos, grip, steps: int = 500, phase: str = None, ramp_frac: float = None):
         """Smooth move: interpolate the joint target from current to the IK solution over the
-        first ramp_frac*steps (a hard slew would fling the grasped cube), then hold."""
+        first ramp_frac*steps (a hard slew would fling the grasped cube), then hold.
+        ramp_frac=None -> module SLEW_RAMP (cho phep ablation hard-slew vs interp)."""
         if phase:
             self.phase = phase
+        if ramp_frac is None:
+            ramp_frac = SLEW_RAMP
         q_goal = self.ik_solve(target_pos)
         q_start = self.d.qpos[:7].copy()
         self.grip = grip

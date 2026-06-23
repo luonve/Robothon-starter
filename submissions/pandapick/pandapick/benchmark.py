@@ -64,6 +64,25 @@ def run_all(n_episodes: int | None = None, save_dataset: bool = True, verbose: b
     return summary, rows
 
 
+def measure_ablation(seeds=(0, 1, 2, 3, 4), n=3):
+    """Ablation (concrete physics read): smooth INTERPOLATED trajectory (ramp 0.6) vs a HARD joint
+    slew (ramp 1.0) — the hard slew flings the grasped cube. Reports place-success rate for each,
+    REAL rollouts (no dataset). This is the measured value of the interpolation design choice."""
+    import pandapick.control as ctrl
+    saved = ctrl.SLEW_RAMP
+    out = {}
+    for label, rf in (("interpolated", 0.6), ("hard_slew", 1.0)):
+        ctrl.SLEW_RAMP = rf
+        succ = tot = 0
+        for s in seeds:
+            res, _, _ = run_episode(s, task="pick_place", n=n, log=False)
+            succ += res["success"]; tot += n
+        out[label + "_place_success"] = round(succ / max(1, tot), 3)
+    ctrl.SLEW_RAMP = saved
+    out["interpolation_gain_pp"] = round(100 * (out["interpolated_place_success"] - out["hard_slew_place_success"]), 1)
+    return out
+
+
 def measure_grasp_stability():
     """Grasp a cube, ramp an external disturbance, return the max force the grip holds (N)."""
     import mujoco

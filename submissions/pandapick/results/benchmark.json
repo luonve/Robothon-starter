@@ -11,7 +11,12 @@
     "obs_dim": 14,
     "action_dim": 7,
     "grasp_holds_disturbance_N": 5.0,
-    "disturbance_x_object_weight": 19.9
+    "disturbance_x_object_weight": 19.9,
+    "ablation_ramp": {
+      "interpolated_place_success": 1.0,
+      "hard_slew_place_success": 0.533,
+      "interpolation_gain_pp": 46.7
+    }
   },
   "tasks": [
     {
