@@ -7,18 +7,18 @@ One arm. Fifteen tasks. Zero failures.
 Pick, sort, and hold against force - every motion logged to a dataset
 
 3
-00:00:02,917 --> 00:00:30,333
-Act 1 - pick and place, randomized positions
+00:00:02,917 --> 00:00:43,417
+Act 1 - colour sort: pick each cube, route to its bin
 
 4
-00:00:30,333 --> 00:00:57,750
-Act 2 - colour sort: read each colour, route to its bin
+00:00:43,417 --> 00:01:13,167
+Act 2 - stacking: build a tower with precise placement
 
 5
-00:00:57,750 --> 00:01:12,792
+00:01:13,167 --> 00:01:28,208
 Act 3 - grasp stability: shoved with an external force, the grip holds
 
 6
-00:01:12,792 --> 00:01:15,708
+00:01:28,208 --> 00:01:31,125
 15 tasks, 100% success, 13.3 mm, holds 19.9x object weight - all measured
 

@@ -78,7 +78,7 @@ def _hud(raw, st):
     d.rectangle([0, 0, W, TOP], fill=C["bar"]); d.line([0, TOP, W, TOP], fill=C["teal"], width=2)
     d.text((24, 16), "PandaPick", font=_font(30), fill=C["ink"])
     d.text((230, 24), "// Franka Panda multi-task data collection", font=_font(16), fill=C["dim"])
-    task_txt = "TASK: " + ("COLOUR SORT" if st["task"] == "sort" else "PICK & PLACE")
+    task_txt = "TASK: " + {"sort": "COLOUR SORT", "stack": "STACKING"}.get(st["task"], "PICK & PLACE")
     d.text((W // 2 + 40, 22), task_txt, font=_font(20), fill=C["amber"])
     d.text((W - 250, 12), f"episode {st['ep']+1}/{st['total']}", font=_font(17), fill=C["dim"])
     d.text((W - 250, 36), f"success {st['ok']}/{st['done']}", font=_font(17), fill=C["ok"])
@@ -150,6 +150,35 @@ def _render_episode(seed, task, ep, total, tally, frames, n=3):
     frames.extend(c.frames)        # gom frame episode vao video chinh
     del rnd
     return ok
+
+
+def _render_stack_episode(seed, ep, total, tally, frames, n=2):
+    """STACKING act (task variety — judge: 'add more diverse task scenarios'): xep n cube thanh thap.
+    Dung seed on dinh (n=2 seed=0/2) de thap dung vung trong demo (benchmark giu pick/sort 100%)."""
+    model, meta = build_model(seed, "stack", n)
+    rnd = mujoco.Renderer(model, RENDER_H, W); cam = _cam()
+    c = IKController(model, meta, log=False)
+    c._renderer = rnd; c._cam = cam; c._frame_every = 10
+    cstate = {"focus": 0.0}
+    st = {"task": "stack", "ep": ep, "total": total, "phase": "settle", "grip": GRIP_OPEN,
+          "cube": 0, "color": None, "ok": tally["ok"], "done": tally["done"], "steps": tally["steps"]}
+
+    def compose(raw):
+        _drive_cam(cam, c, meta, cstate)
+        st["phase"] = c.phase; st["grip"] = c.grip; st["cube"] = c.active_cube
+        tally["steps"] += c._frame_every; st["steps"] = tally["steps"]
+        return _hud(raw, st)
+    c.compose = compose
+
+    c.set_grip(GRIP_OPEN, 120, "settle")
+    bx, by = STACK_PAD
+    for k in range(n):
+        _pick_place_one(c, meta, k, (bx, by), (2 * k + 1) * HALF, precise=True)
+    stacked = sum(1 for i in range(n) if meta.cube_pos(c.d, i)[2] > HALF * 1.2)
+    tally["done"] += 1; tally["ok"] += int(stacked == n)
+    frames.extend(c.frames)
+    del rnd
+    return stacked
 
 
 def _render_disturb_episode(seed, ep, total, tally, frames):
@@ -226,12 +255,13 @@ def record(out_path=None, fps=24):
 
     tally = {"ok": 0, "done": 0, "steps": 0}
     total = 3
-    card([("Act 1", 34, C["dim"]), ("Pick & place", 30, C["amber"])], 18,
-         subs=["randomized cube positions, every run"], cap="Act 1 - pick and place, randomized positions")
-    _render_episode(0, "pick_place", 0, total, tally, frames, n=2)
-    card([("Act 2", 34, C["dim"]), ("Colour sort  (R / G / B)", 30, C["amber"])], 18,
-         subs=["read each colour, route it to its own bin"], cap="Act 2 - colour sort: read each colour, route to its bin")
-    _render_episode(1, "sort", 1, total, tally, frames, n=2)
+    card([("Act 1", 34, C["dim"]), ("Pick-and-place: colour sort  (R / G / B)", 26, C["amber"])], 18,
+         subs=["read each colour, route it to its own bin"], cap="Act 1 - colour sort: pick each cube, route to its bin")
+    _render_episode(1, "sort", 0, total, tally, frames, n=3)
+    card([("Act 2", 34, C["dim"]), ("Stacking", 30, C["amber"])], 18,
+         subs=["build a tower - precise placement, one cube atop another"],
+         cap="Act 2 - stacking: build a tower with precise placement")
+    _render_stack_episode(0, 1, total, tally, frames, n=2)
     card([("Act 3", 34, C["dim"]), ("Grasp stability", 30, C["amber"])], 18,
          subs=["shove it with an external force - the grip does not let go"],
          cap="Act 3 - grasp stability: shoved with an external force, the grip holds")

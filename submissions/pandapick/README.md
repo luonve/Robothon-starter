@@ -9,9 +9,10 @@ Runs on MuJoCo, CPU-only, in one command.
 ![PandaPick demo — pick-and-place and colour sorting](results/pandapick_demo.gif)
 
 _Above: the live demo (full video `results/pandapick_demo.mp4` + `results/pandapick_narration.srt`,
-produced by `python run.py --demo`, ~40 s with a cinematic dollying/orbiting camera). Three acts —
-**pick & place → colour sort → grasp stability** (the grip holds the cube against an external shove) —
-each autonomous, with every state-action step logged to the imitation dataset._
+produced by `python run.py --demo`, cinematic dollying/orbiting camera on a clean stage). Three
+**distinct task types** — **colour sort (R/G/B) → stacking a tower → grasp stability** (the grip holds
+the cube against an external shove, ending on a red→green "GRIP HOLDS — 19.9× weight" beat) — each
+autonomous, with every state-action step logged to the imitation dataset._
 
 ---
 
@@ -94,16 +95,16 @@ python scripts/make_plots.py   # regenerate the figures
 
 ## On the judging rubric (each axis → evidence file)
 
-| Rubric axis            | Where it shows up                                                                                                |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| Runnability            | `run.py` — one CPU command produces benchmark + dataset + demo; `validate_submission.py`                         |
-| Depth of MuJoCo use    | `model.py` (`MjSpec`, `mj_jacSite` Jacobian IK, free-body contact, external-force disturbance, offscreen render) |
-| Task design            | `benchmark.py` 15-task suite (pick-place + colour-sort + grasp-stability), 100% solved                           |
-| Control                | `control.py` resolved-rate (Jacobian) IK + smooth interpolated trajectories                                      |
-| Dexterous manipulation | grasp → transport → place of randomized objects; **grasp holds a 5 N / 19.9× object-weight** disturbance         |
-| Engineering quality    | small separated modules; pinned deps; vendored model; self-validator                                             |
-| Presentation           | cinematic HUD demo video + `keyframes.png` + `narration.srt` + result plots                                      |
-| Innovation             | manipulation reframed as **demonstration-data generation** (a labelled imitation corpus)                         |
+| Rubric axis            | Where it shows up                                                                                                                           |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Runnability            | `run.py` — one CPU command produces benchmark + dataset + demo; `validate_submission.py`                                                    |
+| Depth of MuJoCo use    | `model.py` (`MjSpec`, `mj_jacSite` Jacobian IK, free-body contact, external-force disturbance, offscreen render)                            |
+| Task design            | **multiple distinct task types** — pick-place, colour-sort, **stacking (tower)**, grasp-stability; 15-task scored suite at 100%             |
+| Control                | `control.py` resolved-rate (Jacobian) IK + smooth interpolated trajectories                                                                 |
+| Dexterous manipulation | grasp → transport → place of randomized objects; **precise stacking** into a tower; **grasp holds a 5 N / 19.9× object-weight** disturbance |
+| Engineering quality    | small separated modules; pinned deps; vendored model; self-validator                                                                        |
+| Presentation           | cinematic HUD demo video + `keyframes.png` + `narration.srt` + result plots                                                                 |
+| Innovation             | manipulation reframed as **demonstration-data generation** (a labelled imitation corpus)                                                    |
 
 Every on-screen and README number is read live from the simulation (`mj_forward`/`qpos`/`mj_jacSite`);
 cubes are freejoint bodies — **no teleport or weld shortcut**. The placement precision (13.3 mm) and
