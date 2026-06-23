@@ -104,6 +104,12 @@ class Meta:
                           for i in range(self.n)]
         self.cube_bid = [mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_BODY, f"cube{i}") for i in range(self.n)]
         self.colors = [f["color"] for f in scene["feeders"]]
+        # Fingertip geoms cho doc luc tiep xuc (mj_contactForce): cac pad la geom KHONG TEN
+        # (dinh nghia qua class) -> PHAI loc theo body id cua left_finger/right_finger, KHONG tra ten.
+        lf = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_BODY, "left_finger")
+        rf = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_BODY, "right_finger")
+        self.finger_geoms = frozenset(i for i in range(m.ngeom) if m.geom_bodyid[i] in (lf, rf))
+        self.cube_geom = [mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, f"cube{i}_g") for i in range(self.n)]
 
     def cube_pos(self, d, i):
         a = self.cube_jadr[i]

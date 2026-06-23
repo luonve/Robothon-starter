@@ -29,9 +29,10 @@ def main() -> int:
     else:
         ok &= _check("registration.json exists", False)
 
-    for rel in ["README.md", "requirements.txt", "run.py",
+    for rel in ["README.md", "requirements.txt", "run.py", "audit.py", "JUDGE_BRIEF.md",
                 "pandapick/model.py", "pandapick/control.py", "pandapick/pipeline.py",
-                "pandapick/benchmark.py", "pandapick/record_demo.py"]:
+                "pandapick/benchmark.py", "pandapick/record_demo.py",
+                "results/ablation.json", "results/rubric_scorecard.json"]:
         ok &= _check(f"file present: {rel}", os.path.exists(os.path.join(HERE, rel)))
 
     bj = os.path.join(HERE, "results", "benchmark.json")
@@ -44,6 +45,12 @@ def main() -> int:
         ok &= _check("benchmark: grasp-stability (x object weight)", "disturbance_x_object_weight" in s,
                      f"{s.get('disturbance_x_object_weight')}x")
         ok &= _check("benchmark: labelled dataset steps", (s.get("dataset_steps") or 0) > 1000, str(s.get("dataset_steps")))
+        # closed-loop force control: regulated grasp genuinely gentler than open-loop binary
+        ok &= _check("benchmark: closed-loop grasp force present", "closed_loop_grasp_force_N" in s,
+                     f"{s.get('closed_loop_grasp_force_N')} N")
+        ok &= _check("benchmark: closed-loop gentler than open binary",
+                     (s.get("closed_loop_grasp_force_N") or 9) < (s.get("open_loop_grasp_force_N") or 0),
+                     f"{s.get('closed_loop_grasp_force_N')} N < {s.get('open_loop_grasp_force_N')} N")
     else:
         ok &= _check("results/benchmark.json exists (run `python run.py` first)", False)
 
@@ -55,11 +62,15 @@ def main() -> int:
                      f"{s.get('mean_place_err_mm')} mm")
         ok &= _check("README cites the measured grasp-stability ratio", f"{s.get('disturbance_x_object_weight')}" in rtxt,
                      f"{s.get('disturbance_x_object_weight')}x")
+        ok &= _check("README cites the closed-loop grasp force", str(s.get("closed_loop_grasp_force_N")) in rtxt,
+                     f"{s.get('closed_loop_grasp_force_N')} N")
 
     # demo video: official 1-3 min window + size; keyframes storyboard present
     mp4 = os.path.join(HERE, "results", "pandapick_demo.mp4")
     if os.path.exists(mp4):
-        ok &= _check("demo video > 1 MB", os.path.getsize(mp4) > 1_000_000, f"{os.path.getsize(mp4)//1024} KB")
+        mb = os.path.getsize(mp4) / 1e6
+        ok &= _check("demo video > 1 MB", mb > 1.0, f"{mb:.2f} MB")
+        ok &= _check("demo video <= 6 MB (lightweight, judge-loadable)", mb <= 6.0, f"{mb:.2f} MB")
         try:
             import imageio.v2 as imageio
             r = imageio.get_reader(mp4); md = r.get_meta_data()

@@ -1,8 +1,15 @@
 {
-  "name": "PandaPick demonstration generator",
+  "name": "PandaPick closed-loop force-regulated manipulation cell",
   "robot": "Franka Emika Panda (7-DOF arm + parallel gripper), MjSpec-composed scene",
-  "controller": "scripted resolved-rate (damped-least-squares Jacobian) IK on mj_jacSite, with interpolated joint-target trajectories; gripper as a position actuator",
-  "role": "expert LABELLER / demonstration generator (deterministic, by design) — NOT a learned policy; no RL is claimed",
+  "controller": "CLOSED-LOOP contact-force-regulated grasp: P-control on mj_contactForce (EMA-filtered) drives the gripper actuator to a calibrated setpoint, then secures for transport; layered on resolved-rate (damped-least-squares Jacobian) IK on mj_jacSite with interpolated joint-target trajectories",
+  "role": "scripted expert / demonstration generator (deterministic, by design) with a genuine inner force feedback loop - NOT a learned/RL policy; no RL is claimed",
+  "loop": {
+    "sensor": "mj_contactForce summed over fingertip<->cube contacts (fingertip geoms resolved by body, not name)",
+    "actuator": "actuator8 tendon position-servo, ctrl 0..255",
+    "law": "dctrl = -clip(kp * (target_N - force_ema), -dmax, dmax); terminates on |error| < 0.3 N sustained, not a fixed step count",
+    "writes": "d.ctrl ONLY - never qpos (no teleport)",
+    "auditable": "blinding the force sensor changes the converged grip (sensored ~1.36 N vs sensor-cut ~1.74 N) - see audit.py"
+  },
   "tasks": [
     "pick_place",
     "colour_sort (R/G/B)",
@@ -15,23 +22,39 @@
     "end-effector pose (mj_jacSite)",
     "per-cube pose",
     "gripper width",
-    "fingertip contact / mj_contactForce"
+    "fingertip contact force (mj_contactForce)"
   ],
-  "outputs": ["7-DOF arm joint targets", "gripper open/close", "phase label"],
+  "outputs": [
+    "7-DOF arm joint targets",
+    "gripper actuator command",
+    "phase label"
+  ],
   "dataset": {
-    "steps": 139960,
-    "obs_dim": 14,
-    "action_dim": 7,
+    "steps": 132712,
     "format": "results/demo_dataset.npz",
-    "labels": ["phase", "task", "episode"]
+    "columns": [
+      "qpos",
+      "qvel",
+      "ee_pos",
+      "grip",
+      "cube_pos",
+      "action_qtarget",
+      "grip_force_N",
+      "phase",
+      "task",
+      "episode"
+    ]
   },
   "measured_metrics": {
     "task_success_rate": 1.0,
-    "mean_place_err_mm": 13.3,
+    "mean_place_err_mm": 13.8,
+    "closed_loop_grasp_force_N": 1.3,
+    "closed_loop_force_rmse_N": 0.414,
+    "open_loop_binary_force_N": 1.84,
+    "force_reduction_vs_open_pct": 29.3,
     "grasp_holds_disturbance_N": 5.0,
-    "disturbance_x_object_weight": 19.9,
-    "ablation_interpolated_vs_hard_slew_pp": 46.7
+    "disturbance_x_object_weight": 19.9
   },
-  "integrity": "cubes are freejoint bodies; NO teleport, NO weld, NO equality shortcut. Every reported number is read live from the MuJoCo simulation (mj_forward/qpos/mj_jacSite/mj_contactForce) and cross-checked by validate_submission.py (README == benchmark.json). Sim-only; no real-robot claims.",
+  "integrity": "cubes are freejoint bodies; NO teleport, NO weld, NO equality shortcut. Every number is read live from MuJoCo (mj_forward/qpos/mj_jacSite/mj_contactForce) and cross-checked by validate_submission.py (README == benchmark.json) and audit.py (loop is real). 2-finger parallel-jaw force control (~2 N regime); no dexterity / 5-finger claims. Sim-only; no real-robot claims.",
   "compute": "CPU only, no GPU; one command (python run.py)"
 }

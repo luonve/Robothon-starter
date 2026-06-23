@@ -37,13 +37,13 @@ def run_all(n_episodes: int | None = None, save_dataset: bool = True, verbose: b
     suite = TASK_SUITE if n_episodes is None else TASK_SUITE[:max(1, n_episodes)]
     rows = []
     ds = {"qpos": [], "qvel": [], "ee_pos": [], "grip": [], "cube_pos": [],
-          "action_qtarget": [], "phase": [], "episode": [], "task": []}
+          "action_qtarget": [], "grip_force_N": [], "phase": [], "episode": [], "task": []}
     for ep, (name, task, seed, n, dist) in enumerate(suite):
         res, recs, _ = run_episode(seed, task=task, n=n, log=save_dataset, disturb_N=dist)
         res.update({"task_id": name, "episode": ep})
         rows.append(res)
         for r in recs:
-            for k in ("qpos", "qvel", "ee_pos", "grip", "cube_pos", "action_qtarget", "phase"):
+            for k in ("qpos", "qvel", "ee_pos", "grip", "cube_pos", "action_qtarget", "grip_force_N", "phase"):
                 ds[k].append(r[k])
             ds["episode"].append(ep); ds["task"].append(task)
         if verbose:
@@ -53,9 +53,21 @@ def run_all(n_episodes: int | None = None, save_dataset: bool = True, verbose: b
     held, weight = measure_grasp_stability()
     summary["grasp_holds_disturbance_N"] = held
     summary["disturbance_x_object_weight"] = round(held / weight, 1) if weight else None
+    # closed-loop force-control ablation (do that): closed regulates contact force vs open-loop binary
+    abl = run_ablation()
+    summary["closed_loop_grasp_force_N"] = abl["closed_mean_force_N"]
+    summary["closed_loop_force_rmse_N"] = abl["closed_mean_rmse_N"]
+    summary["open_loop_grasp_force_N"] = abl["open_mean_force_N"]
+    summary["force_reduction_vs_open_pct"] = abl["force_reduction_pct"]
+    summary["sensor_cut_grasp_force_N"] = abl["sensor_cut_grasp_force_N"]   # blind -> slam ve binary
     if verbose:
         print(f"  grasp stability: holds {held:.0f} N disturbance ({held/weight:.0f}x object weight)")
+        print(f"  force control: closed {abl['closed_mean_force_N']}N (rmse {abl['closed_mean_rmse_N']}N) "
+              f"vs open {abl['open_mean_force_N']}N -> {abl['force_reduction_pct']}% gentler; "
+              f"sensor-cut -> {abl['sensor_cut_grasp_force_N']}N (slams to binary)")
     os.makedirs(RESULTS, exist_ok=True)
+    with open(os.path.join(RESULTS, "ablation.json"), "w", encoding="utf-8") as fp:
+        json.dump(abl, fp, indent=2, ensure_ascii=False)
     with open(os.path.join(RESULTS, "benchmark.json"), "w", encoding="utf-8") as fp:
         json.dump({"summary": summary, "tasks": rows}, fp, indent=2, ensure_ascii=False)
     _write_csv(rows)
@@ -81,6 +93,58 @@ def measure_ablation(seeds=(0, 1, 2, 3, 4), n=3):
     ctrl.SLEW_RAMP = saved
     out["interpolation_gain_pp"] = round(100 * (out["interpolated_place_success"] - out["hard_slew_place_success"]), 1)
     return out
+
+
+def run_ablation(seeds=(0, 1, 2, 3, 4, 5)):
+    """CLOSED-LOOP vs OPEN-LOOP grasp FORCE CONTROL (do that, identical seeds).
+    closed = grasp_to_force dieu khien luc tiep xuc fingertip (mj_contactForce) ve setpoint;
+    open   = binary full-close (luc KHONG kiem soat). Bao luc kep do duoc + RMSE bam target moi seed.
+    SENSOR-CUT control: blind cam bien -> vong lap KHONG regulate duoc (slam ve binary) = bang chung
+    loop THAT SU dung sensor (khong phai trang tri). KHONG phai task-success gap (khong tao gia)."""
+    import numpy as np
+    from .model import build_model
+    from .control import IKController, GRIP_OPEN, GRIP_CLOSE, FORCE_TARGET_N
+
+    def grasp_force(seed, mode, blind=False):
+        m, meta = build_model(seed, "pick_place", 1)
+        c = IKController(m, meta, log=False)
+        real_read = c.read_grip_force
+        if blind:
+            c.read_grip_force = lambda i: 0.0            # cat cam bien luc (vong lap mu)
+        c.set_grip(GRIP_OPEN, 120, "settle")
+        cx, cy, cz = meta.cube_pos(c.d, 0)
+        c.move_to([cx, cy, cz + 0.12], GRIP_OPEN, 300, "h")
+        c.move_to([cx, cy, cz], GRIP_OPEN, 300, "d")
+        if mode == "closed":
+            F, _ = c.grasp_to_force(0, firm=False)
+            c.read_grip_force = real_read                # khoi phuc de DO luc kep that su dat duoc
+            return float(c.read_grip_force(0)), c.last_force_rmse
+        c.set_grip(GRIP_CLOSE, 460, "g")
+        return float(real_read(0)), None
+
+    rows = []
+    for s in seeds:
+        cf, crmse = grasp_force(s, "closed")
+        of, _ = grasp_force(s, "open")
+        rows.append({"seed": s, "closed_force_N": round(cf, 2),
+                     "closed_rmse_N": round(crmse, 3) if crmse is not None else None,
+                     "open_force_N": round(of, 2)})
+    blind_f, _ = grasp_force(0, "closed", blind=True)    # sensor-cut: phai slam ve binary
+    cforces = [r["closed_force_N"] for r in rows]
+    oforces = [r["open_force_N"] for r in rows]
+    crmses = [r["closed_rmse_N"] for r in rows if r["closed_rmse_N"] is not None]
+    cmean = float(np.mean(cforces)); omean = float(np.mean(oforces))
+    return {
+        "metric": "grasp force control (closed-loop mj_contactForce vs open-loop binary)",
+        "target_force_N": FORCE_TARGET_N,
+        "closed_mean_force_N": round(cmean, 2),
+        "closed_mean_rmse_N": round(float(np.mean(crmses)), 3) if crmses else None,
+        "open_mean_force_N": round(omean, 2),
+        "force_reduction_pct": round(100 * (1 - cmean / omean), 1) if omean else None,
+        "sensored_grasp_force_N": round(cforces[0], 2),
+        "sensor_cut_grasp_force_N": round(blind_f, 2),
+        "per_seed": rows,
+    }
 
 
 def measure_grasp_stability():
@@ -126,7 +190,7 @@ def summarize(rows):
         "object_pick_rate": round(picked / max(1, tot), 3),
         "object_place_rate": round(success / max(1, tot), 3),
         "mean_place_err_mm": round(float(np.mean(errs)) * 1000, 1) if errs else None,
-        "control": "resolved-rate (Jacobian) IK + smooth interpolated trajectories",
+        "control": "closed-loop contact-force-regulated grasp (mj_contactForce) + resolved-rate (Jacobian) IK + smooth interpolated trajectories",
         "dataset_steps": None,   # filled by run_all caller-side
         "obs_dim": 14, "action_dim": 7,
     }

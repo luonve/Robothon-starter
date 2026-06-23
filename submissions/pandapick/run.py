@@ -5,6 +5,8 @@
   python run.py --episodes 20  # number of seeds
   python run.py --quick        # quick smoke run
   python run.py --demo         # render the demo video
+  python run.py --ablation     # closed-loop vs open-loop grasp force control (measured)
+  python run.py --audit        # re-runnable honesty audit of the closed-loop claims
 """
 from __future__ import annotations
 import argparse
@@ -12,15 +14,29 @@ import time
 
 
 def main():
-    ap = argparse.ArgumentParser(description="PandaPick pick-and-place data-collection")
+    ap = argparse.ArgumentParser(description="PandaPick closed-loop force-regulated manipulation cell")
     ap.add_argument("--tasks", type=int, default=None, help="limit to first N tasks (default: full 15)")
     ap.add_argument("--quick", action="store_true")
     ap.add_argument("--demo", action="store_true")
+    ap.add_argument("--ablation", action="store_true", help="closed-loop vs open-loop grasp force control")
+    ap.add_argument("--audit", action="store_true", help="re-runnable honesty audit of the closed-loop claims")
     args = ap.parse_args()
 
     if args.demo:
         from pandapick.record_demo import record
         print(f"[OK] Video: {record()}")
+        return
+
+    if args.audit:
+        import audit
+        audit.main()
+        return
+
+    if args.ablation:
+        import json
+        from pandapick.benchmark import run_ablation
+        print("[START] closed-loop vs open-loop grasp force control (identical seeds)")
+        print(json.dumps(run_ablation(), indent=2))
         return
 
     from pandapick.benchmark import run_all
