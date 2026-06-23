@@ -16,7 +16,16 @@
     "closed_loop_force_rmse_N": 0.414,
     "open_loop_grasp_force_N": 1.84,
     "force_reduction_vs_open_pct": 29.3,
-    "sensor_cut_grasp_force_N": 1.74
+    "sensor_cut_grasp_force_N": 1.74,
+    "integration_composite_score": 100.0,
+    "integration_phases": [
+      "approach",
+      "force_grasp",
+      "lift",
+      "disturb_hold",
+      "place",
+      "verify"
+    ]
   },
   "tasks": [
     {

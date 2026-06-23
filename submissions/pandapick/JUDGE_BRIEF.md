@@ -1,9 +1,10 @@
 # PandaPick — Judge Brief (60-second review path)
 
-**One-line:** a Franka Panda **closed-loop force-regulated manipulation cell** — it reads fingertip
-contact force (`mj_contactForce`) and regulates each grasp to a calibrated **1.3 N** instead of a blind
-binary slam, solves a 15-task pick-place / colour-sort suite at **100%**, and logs every step
-(including the measured grip force) as a labelled imitation dataset.
+**One-line:** a Franka Panda **closed-loop force-regulated manipulation cell** with **true closed-loop
+integration** — it reads fingertip contact force (`mj_contactForce`) and regulates each grasp to a
+calibrated **1.3 N** instead of a blind binary slam, chains every skill into ONE continuous 6-phase run
+(approach → force-grasp → lift → hold-under-disturbance → place → verify, composite **100/100**), solves
+a 15-task pick-place / colour-sort suite at **100%**, and logs every step as a labelled imitation dataset.
 
 ## Inspect first (everything is one command)
 

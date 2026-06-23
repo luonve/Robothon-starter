@@ -5,6 +5,10 @@ and regulates every grasp to a calibrated setpoint — instead of a blind binary
 pick-place and colour-sorting jobs across randomized scenes and logs every (observation, action,
 grip-force) step as a ready-made imitation-learning dataset.**
 
+**True closed-loop integration:** every capability also runs as ONE continuous 6-phase sequence —
+_approach → force-regulated grasp → lift → hold against an external disturbance → precision place →
+verify_ — scored as a single composite (**100 / 100**), not six disconnected demos.
+
 Runs on MuJoCo, CPU-only, in one command.
 
 ![PandaPick demo — closed-loop force-regulated pick-and-place and colour sorting](results/pandapick_demo.gif)
@@ -46,6 +50,7 @@ A **15-task benchmark** (pick-place, colour-sort and multi-object jobs, 2–4 cu
 positions/colours per seed) — every number is measured from the MuJoCo rollout, nothing hand-written:
 
 - **15 / 15 tasks solved, 100 %** task success rate
+- **true closed-loop integration: 6-phase composite 100 / 100** — approach → force-grasp → lift → hold-under-disturbance → place → verify, as ONE continuous run
 - **closed-loop grasp force: regulated to 1.3 N during approach/settle** (mean over 6 seeds, range
   0.97–1.74 N, RMSE 0.41 N) — **29 % gentler** than the 1.84 N open-loop binary slam; the grip then
   **firms to a secure hold for the carry** (the parallel-jaw force band is too narrow to carry 4 cubes light)

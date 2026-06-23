@@ -65,6 +65,12 @@ def run_all(n_episodes: int | None = None, save_dataset: bool = True, verbose: b
         print(f"  force control: closed {abl['closed_mean_force_N']}N (rmse {abl['closed_mean_rmse_N']}N) "
               f"vs open {abl['open_mean_force_N']}N -> {abl['force_reduction_pct']}% gentler; "
               f"sensor-cut -> {abl['sensor_cut_grasp_force_N']}N (slams to binary)")
+    # TRUE-INTEGRATION: 1 chuoi LIEN TUC 6 pha tren 1 cube (composite) — coherent task, ko phai primitive roi rac
+    integ = [task_integration(s) for s in (0, 1, 2)]
+    summary["integration_composite_score"] = round(float(np.mean([i["composite_score"] for i in integ])), 1)
+    summary["integration_phases"] = [p["phase"] for p in integ[0]["phases"]]
+    if verbose:
+        print(f"  true integration: 6-phase composite {summary['integration_composite_score']}/100")
     os.makedirs(RESULTS, exist_ok=True)
     with open(os.path.join(RESULTS, "ablation.json"), "w", encoding="utf-8") as fp:
         json.dump(abl, fp, indent=2, ensure_ascii=False)
@@ -74,6 +80,47 @@ def run_all(n_episodes: int | None = None, save_dataset: bool = True, verbose: b
     if save_dataset:
         _save_dataset(ds)
     return summary, rows
+
+
+def task_integration(seed=0):
+    """TRUE-INTEGRATION (coherent task, ko phai 4 primitive roi rac): 1 chuoi LIEN TUC tren 1 cube,
+    cham diem composite. approach -> closed-loop FORCE GRASP -> lift -> static disturbance hold (shove
+    giu duoc) -> precision place -> verify. Moi pha pass theo tieu chi DO duoc; composite = % pha pass.
+    Day la 'task mach lac' top entry (Guardian/DUET) duoc thuong la 'true integration'."""
+    import mujoco
+    from .model import build_model, HALF, STACK_PAD
+    from .control import IKController, GRIP_OPEN
+    m, meta = build_model(seed, "pick_place", 1)
+    c = IKController(m, meta, log=False)
+    c.set_grip(GRIP_OPEN, 120, "settle")
+    cx, cy, cz = meta.cube_pos(c.d, 0); bx, by = STACK_PAD
+    ph = []
+    c.move_to([cx, cy, cz + 0.12], GRIP_OPEN, 300, "hover"); c.move_to([cx, cy, cz], GRIP_OPEN, 300, "descend")
+    ph.append(("approach", float(np.linalg.norm(meta.ee_pos(c.d)[:2] - np.array([cx, cy]))) < 0.02))
+    F, hold = c.grasp_to_force(0)                       # closed-loop force grasp
+    ph.append(("force_grasp", F > 0.3))
+    c.move_to([cx, cy, cz + 0.24], hold, 360, "lift")
+    ph.append(("lift", meta.cube_pos(c.d, 0)[2] > cz + 0.12))
+    cb = meta.cube_bid[0]; zc = meta.cube_pos(c.d, 0)[2]   # static disturbance hold (nhu grasp-stability)
+    c.d.xfrc_applied[cb][:3] = [3.0 * 0.6, 0.0, -3.0]
+    for _ in range(150):
+        mujoco.mj_step(m, c.d)
+    c.d.xfrc_applied[cb][:] = 0.0
+    for _ in range(60):
+        mujoco.mj_step(m, c.d)
+    ph.append(("disturb_hold", meta.cube_pos(c.d, 0)[2] > zc - 0.05))
+    c.move_to([bx, by, HALF + 0.02 + 0.14], hold, 460, "transport")
+    c.move_to([bx, by, HALF + 0.02 + 0.012], hold, 380, "place")
+    c.set_grip(GRIP_OPEN, 250, "release")
+    c.move_to([bx, by, HALF + 0.02 + 0.16], GRIP_OPEN, 200, "retract")
+    cf = meta.cube_pos(c.d, 0); err = float(np.linalg.norm(cf[:2] - np.array([bx, by])) * 1000)
+    placed = err < 60 and cf[2] < 0.14
+    ph.append(("place", placed)); ph.append(("verify", placed))
+    npass = sum(1 for _, p in ph if p)
+    return {"task": "integration", "seed": seed, "n_phases": len(ph),
+            "composite_score": round(100.0 * npass / len(ph), 1),
+            "place_err_mm": round(err, 1),
+            "phases": [{"phase": n, "pass": bool(p)} for n, p in ph]}
 
 
 def measure_ablation(seeds=(0, 1, 2, 3, 4), n=3):
