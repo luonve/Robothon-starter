@@ -6,7 +6,7 @@
 
 ## Inspect first (everything is one command: `python run.py`)
 
-1. **`results/pandapick_demo.mp4`** (~4 MB, ~76 s) + `results/pandapick_narration.srt` + `results/keyframes.png` (8-shot storyboard) — cinematic, with a live HUD; every on-screen number is read from the sim.
+1. **`results/pandapick_demo.mp4`** (~3.7 MB, ~61 s) + `results/pandapick_narration.srt` + `results/keyframes.png` (8-shot storyboard) — cinematic, with a live HUD; every on-screen number is read from the sim.
 2. **`results/benchmark.json`** — every headline number, measured (no hand-written values).
 3. **`python validate_submission.py`** — re-checks the numbers cross-file and the video gate; prints `ALL CHECKS PASS`.
 
@@ -31,7 +31,7 @@
 | Control      | `control.py` resolved-rate (Jacobian) IK + interpolated trajectories (ablation: +46.7 pp)                        |
 | Dexterity    | grasp → transport → place of randomized objects; grasp holds 19.9× object weight                                 |
 | Engineering  | small typed modules, pinned deps, vendored model untouched, self-validator                                       |
-| Presentation | `pandapick_demo.mp4` (cinematic, ~4 MB) + `keyframes.png` + `narration.srt` + plots                              |
+| Presentation | `pandapick_demo.mp4` (cinematic, ~3.7 MB) + `keyframes.png` + `narration.srt` + plots                            |
 | Innovation   | manipulation as a **labelled demonstration-data pipeline**                                                       |
 
 ## Integrity (what is deterministic vs measured)

@@ -9,8 +9,8 @@ Runs on MuJoCo, CPU-only, in one command.
 ![PandaPick demo — pick-and-place and colour sorting](results/pandapick_demo.gif)
 
 _Above: the live demo (full video `results/pandapick_demo.mp4` + `results/pandapick_narration.srt`,
-produced by `python run.py --demo`, ~40 s with a cinematic dollying/orbiting camera). Three acts —
-**pick & place → colour sort → grasp stability** (the grip holds the cube against an external shove) —
+produced by `python run.py --demo`, ~61 s with a cinematic dollying/orbiting camera). Two acts —
+**colour sort → grasp stability** (the grip holds the cube against an external shove) —
 each autonomous, with every state-action step logged to the imitation dataset._
 
 ---
@@ -93,7 +93,7 @@ python scripts/make_plots.py   # regenerate the figures
 
 ## Inspect first (60-second review path)
 
-1. `results/pandapick_demo.mp4` (~76 s) + `results/keyframes.png` (8-shot storyboard) + `results/pandapick_narration.srt`.
+1. `results/pandapick_demo.mp4` (~61 s, 3.7 MB) + `results/keyframes.png` (8-shot storyboard) + `results/pandapick_narration.srt`.
 2. `results/benchmark.json` — every headline number, measured.
 3. `python validate_submission.py` — re-checks the numbers cross-file and the video gates; prints `ALL CHECKS PASS`.
 

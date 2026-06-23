@@ -1,20 +1,20 @@
 1
-00:00:00,000 --> 00:00:01,667
+00:00:00,000 --> 00:00:01,167
 One arm. Fifteen tasks. Zero failures.
 
 2
-00:00:01,667 --> 00:00:02,917
+00:00:01,167 --> 00:00:02,000
 Pick, sort, and hold against force - every motion logged to a dataset
 
 3
-00:00:02,917 --> 00:00:43,417
+00:00:02,000 --> 00:00:42,333
 Act 1 - pick-and-place colour sort: route each cube to its bin
 
 4
-00:00:43,417 --> 00:00:58,458
+00:00:42,333 --> 00:00:58,083
 Act 2 - grasp stability: shoved with an external force, the grip holds
 
 5
-00:00:58,458 --> 00:01:01,375
+00:00:58,083 --> 00:01:01,333
 15 tasks, 100% success, 13.3 mm, holds 19.9x object weight - all measured
 
